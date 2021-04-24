@@ -1,0 +1,27 @@
+{
+  "name": "pentatrion/upload-bundle",
+  "description": "Upload Helper and File Manager for your Symfony App",
+  "keywords": [
+    "bundle",
+    "symfony",
+    "upload",
+    "file-manager"
+  ],
+  "type": "symfony-bundle",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Hugues Tavernier",
+      "email": "hugues.tavernier@protonmail.com"
+    }
+  ],
+  "require": {
+    "php": "^7.2.5",
+    "liip/imagine-bundle": "^2.5"
+  },
+  "autoload": {
+    "psr-4": {
+      "Pentatrion\\UploadBundle\\": "src/"
+    }
+  }
+}

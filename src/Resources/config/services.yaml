@@ -1,0 +1,45 @@
+parameters:
+  kernel.web_root: "%kernel.project_dir%/public"
+services:
+  pentatrion_upload.file_infos_helper:
+    class: Pentatrion\UploadBundle\Service\FileInfosHelper
+    arguments:
+      $uploadOrigins: "%pentatrion_upload.origins%"
+      $container: '@Psr\Container\ContainerInterface'
+    tags: ["container.service_subscriber"]
+
+  # c'est ce service qui peut être surchargé
+  Pentatrion\UploadBundle\Service\FileInfosHelperInterface: "@pentatrion_upload.file_infos_helper"
+
+  pentatrion_upload.file_helper:
+    class: Pentatrion\UploadBundle\Service\FileHelper
+    arguments:
+      $container: '@Psr\Container\ContainerInterface'
+      $validator: '@Symfony\Component\Validator\Validator\ValidatorInterface'
+      $cacheManager: "@?liip_imagine.cache.manager"
+      $fileInfosHelper: '@Pentatrion\UploadBundle\Service\FileInfosHelperInterface'
+    tags: ["container.service_subscriber"]
+
+  Pentatrion\UploadBundle\Service\FileHelper: "@pentatrion_upload.file_helper"
+
+  Pentatrion\UploadBundle\Twig\AssetExtension:
+    arguments:
+      $fileInfosHelper: '@Pentatrion\UploadBundle\Service\FileInfosHelperInterface'
+    tags: ["twig.extension"]
+
+  Pentatrion\UploadBundle\EventSubscriber\ExceptionSubscriber:
+    arguments:
+      $logger: '@Psr\Log\LoggerInterface'
+    tags: ["kernel.event_subscriber"]
+
+  Pentatrion\UploadBundle\Service\FileManagerHelper:
+    arguments:
+      $router: "@router"
+      $tokenStorage: '@Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface'
+
+  Pentatrion\UploadBundle\Controller\UploadController:
+    tags: ["controller.service_arguments"]
+    arguments:
+      $fileInfosHelper: '@Pentatrion\UploadBundle\Service\FileInfosHelperInterface'
+    calls:
+      - [setContainer, ["@service_container"]]
