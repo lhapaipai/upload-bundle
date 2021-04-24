@@ -1,5 +1,7 @@
 pentatrion/upload-bundle
 
+Work In Progress !
+
 Provide Upload Helper and endpoints for a File Manager in your Symfony Application
 
 ## Description
@@ -54,7 +56,7 @@ liip_imagine:
       filters:
         thumbnail: { size: [250, 250], mode: inset, allow_upscale: true }
 
-    markdown:
+    large:
       filters:
         thumbnail: { size: [1500, 1500], mode: inset, allow_upscale: false }
 
@@ -127,13 +129,9 @@ class PostController extends AbstractController
 
             $this->getDoctrine()->getManager()->flush();
 
-            return $this->redirectToRoute('post_index');
+            // ...
         }
-
-        return $this->render('post/edit.html.twig', [
-            'post' => $post,
-            'form' => $form->createView(),
-        ]);
+        // ...
     }
 }
 ```
@@ -142,7 +140,7 @@ TODO Uploader
 
 ```php
 dump($fileInfos);
-array:16 [▼
+[
   "inode"       => 8653642
   "id"          => "@public:uploads/posts/logo.svg"
   "filename"    => "logo.svg"
@@ -154,13 +152,13 @@ array:16 [▼
   "origin"      => "public"
   "size"        => 3021
   "humanSize"   => "3.0 Ko"
-  "createdAt"   => DateTime @1619294050 {#953 ▶}
+  "createdAt"   => DateTime
   "isDir"       => false
   "url"         => "http://localhost/uploads/posts/logo.svg"
   "icon"        => "/images/icons/image-svg+xml.svg"
-  "thumbnails"  => array:2 [▼
+  "thumbnails"  => [
     "small"     => "http://localhost/uploads/posts/logo.svg"
-    "markdown"  => "http://localhost/uploads/posts/logo.svg"
+    "full"  => "http://localhost/uploads/posts/logo.svg"
   ]
 ]
 ```
