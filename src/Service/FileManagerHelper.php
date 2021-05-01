@@ -2,23 +2,15 @@
 namespace Pentatrion\UploadBundle\Service;
 
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 
 class FileManagerHelper {
   private $router;
-  private $currentUser;
 
-  public function __construct(UrlGeneratorInterface $router, TokenStorageInterface $tokenStorage) {
+  public function __construct(UrlGeneratorInterface $router) {
     $this->router = $router;
-    $token = $tokenStorage->getToken();
-    if (!$token || !\is_object($user = $token->getUser())) {
-      $this->currentUser = null;
-    } else {
-      $this->currentUser = $user;
-    }
   }
 
-  public function getConfig($entryPoints)
+  public function getConfig($entryPoints, $isAdmin = true)
   {
     $completeEntryPoints = [];
     foreach ($entryPoints as $entryPoint) {
@@ -41,7 +33,7 @@ class FileManagerHelper {
         'showFile' => $this->router->generate('media_show_file'),
         'downloadArchive' => $this->router->generate('media_download_archive'),
       ],
-      'isAdmin'   => $this->currentUser->isAdmin(),
+      'isAdmin'   => $isAdmin,
       'entryPoints' => $completeEntryPoints
     ];
 

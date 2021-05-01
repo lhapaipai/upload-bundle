@@ -8,6 +8,7 @@ interface FileInfosHelperInterface
   public function getAbsolutePath(string $uploadRelativePath, string $origin);
 
   public function getWebPath(string $uploadRelativePath, string $origin);
+  public function getLiipPath(string $uploadRelativePath, string $origin);
 
   public function getInfosFromDirectory(string $directorySuffix, string $origin, bool $withAbsPath = false, bool $withDirectoryInfos = false);
 
@@ -27,4 +28,7 @@ interface FileInfosHelperInterface
 
   public function addAdditionalInfos(&$infos);
   public function addAdditionalInfosToDirectoryFiles(&$data);
+
+  public function getId(string $uploadRelativePath, string $originName = null);
+  public function getUrlThumbnail(string $id, string $filter, bool $pregenerate = false);
 }

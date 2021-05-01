@@ -14,12 +14,23 @@ class Configuration implements ConfigurationInterface
 
     $rootNode
       ->children()
-        ->scalarNode('file_infos_helper')->defaultValue('pentatrion_upload.file_infos_helper')->end()
+        ->scalarNode('file_infos_helper')
+          ->defaultValue('pentatrion_upload.file_infos_helper')
+        ->end()
+        ->arrayNode('liip_filters')
+          ->scalarPrototype()->end()
+        ->end()
+        ->scalarNode('default_origin')->end()
         ->arrayNode('origins')
+          ->useAttributeAsKey('name')
+          ->isRequired()
+          ->requiresAtLeastOneElement()
           ->arrayPrototype()
             ->children()
-              ->scalarNode('path')
-          ->end()          
+              ->scalarNode('path')->end()
+              ->scalarNode('liip_path')->end()
+            ->end()
+          ->end()
       ->end()
     ;
 

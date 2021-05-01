@@ -6,6 +6,8 @@ services:
     arguments:
       $uploadOrigins: "%pentatrion_upload.origins%"
       $container: '@Psr\Container\ContainerInterface'
+      $defaultOriginName: "%pentatrion_upload.default_origin%"
+      $liipFilters: "%pentatrion_upload.liip_filters%"
     tags: ["container.service_subscriber"]
 
   # c'est ce service qui peut être surchargé
@@ -35,7 +37,6 @@ services:
   Pentatrion\UploadBundle\Service\FileManagerHelper:
     arguments:
       $router: "@router"
-      $tokenStorage: '@Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface'
 
   Pentatrion\UploadBundle\Controller\UploadController:
     tags: ["controller.service_arguments"]

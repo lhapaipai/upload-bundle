@@ -116,9 +116,9 @@ class FileHelper implements ServiceSubscriberInterface
   // les droits seront fixés
   // pour un admin  http:http 644
   // pour un client http:http 664
-  public function uploadFile(File $file, $destRelDir, $origin, $options = [])
+  public function uploadFile(File $file, $destRelDir, $originName = null, $options = [])
   {
-    $destAbsDir = $this->fileInfosHelper->getAbsolutePath($destRelDir, $origin);
+    $destAbsDir = $this->fileInfosHelper->getAbsolutePath($destRelDir, $originName);
     
     if (isset($options['forceFilename'])) {
       $newFilename = $options['forceFilename'].'.'.$file->guessExtension();
@@ -131,13 +131,13 @@ class FileHelper implements ServiceSubscriberInterface
       $fs->mkdir($destAbsDir);
     }
     $file->move($destAbsDir, $newFilename);
-    return $this->fileInfosHelper->getInfos($destRelDir.'/'.$newFilename, $origin);
+    return $this->fileInfosHelper->getInfos($destRelDir.'/'.$newFilename, $originName);
   }
 
-  public function delete(string $uploadRelativePath, $origin)
+  public function delete(string $uploadRelativePath, $originName)
   {
-    $absolutePath = $this->fileInfosHelper->getAbsolutePath($uploadRelativePath, $origin);
-    $url = $url = $this->fileInfosHelper->getWebPath($uploadRelativePath, $origin);
+    $absolutePath = $this->fileInfosHelper->getAbsolutePath($uploadRelativePath, $originName);
+    $url = $url = $this->fileInfosHelper->getWebPath($uploadRelativePath, $originName);
 
     $fs = new Filesystem();
     $fs->remove($absolutePath);

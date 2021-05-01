@@ -20,16 +20,33 @@ class PentatrionUploadExtension extends Extension
 
     $webRoot = $container->getParameter('kernel.project_dir').'/public';
     $origins = [];
-    if (null !== $config['origins']) {
+
+    // TODO faire cela dans le fichier Configuration.php
+    if (count($config['origins']) === 0) {
+      $origins = [
+        'public_uploads' => [
+          "path" => $webRoot.'/uploads',
+          'web_prefix' => '/uploads',
+          'liip_path' => '/uploads'
+        ]
+      ];
+    } else {
       foreach ($config['origins'] as $key => $origin) {
         if (strpos($origin['path'], $webRoot) === 0) {
-          $origin['webPrefix'] = substr($origin['path'], strlen($webRoot));
+          $origin['web_prefix'] = substr($origin['path'], strlen($webRoot));
         }
         $origins[$key] = $origin;
       }
     }
-    $container->setParameter('pentatrion_upload.origins', $origins);
 
+    if (!isset($config['default_origin'])) {
+      $config['default_origin'] = array_keys($config['origins'])[0];
+    }
+
+    $container->setParameter('pentatrion_upload.origins', $origins);
+    $container->setParameter('pentatrion_upload.default_origin', $config['default_origin']);
+    $container->setParameter('pentatrion_upload.liip_filters', $config['liip_filters']);
+    
     if (null !== $config['file_infos_helper']) {
       $container->setAlias('Pentatrion\UploadBundle\Service\FileInfosHelperInterface', $config['file_infos_helper']);
     }

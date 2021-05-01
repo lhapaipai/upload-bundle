@@ -6,6 +6,23 @@ Provide Upload Helper and endpoints for a File Manager in your Symfony Applicati
 
 ## Description
 
+2 twig functions
+
+```twig
+
+<!-- /uploads/folder/my-uploaded-file.pdf -->
+{{ uploaded_file_web_path("folder/my-uploaded-file.pdf") }}
+
+<!-- /media-manager/get/show/private_uploads/folder/my-uploaded-file.pdf -->
+{{ uploaded_file_web_path("folder/my-uploaded-file.pdf", "private_uploads") }}
+
+<!-- http://localhost/media/cache/resolve/small/posts/logo.jpg -->
+{{ uploaded_image_filtered('posts/logo.jpg', 'small') }}
+
+<!-- http://localhost/media/cache/resolve/small/posts/logo.jpg -->
+{{ uploaded_image_filtered('posts/logo.jpg', 'small', 'private_uploads') }}
+```
+
 dependances:
 
 - liip/imagine-bundle
@@ -28,29 +45,46 @@ _pentatrion_upload:
 configure your upload directories
 
 ```yaml
-# config/packages/pentatrion_upload.yaml
+## config/packages/pentatrion_upload.yaml
+## default config
+# pentatrion_upload:
+#   file_infos_helper: 'Pentatrion\UploadBundle\Service\FileInfosHelper'
+#   origins:
+#     public_uploads:
+#       path: "%kernel.project_dir%/public/uploads"
+#       liip_path: "/uploads"
+#   liip_filters: ["small", "large"]
+
 pentatrion_upload:
+  # must implement FileInfosHelperInterface
   file_infos_helper: 'App\Service\SuiviFileInfosHelper'
 
   origins:
     # choose the name of your choice
-    public:
+    public_uploads:
       # if directory is inside %kernel.project_dir%/public, files
       # will be directly accessible.
       path: "%kernel.project_dir%/public/uploads"
-
-    private:
+      # prefix to add in order to be found by a liip_imagine loader
+      liip_path: "/uploads"
+    private_uploads:
       path: "%kernel.project_dir%/var/uploads"
+      liip_path: ""
+
+  # if multiple origins
+  default_origin: "public_uploads"
+
+  liip_filters: ["small", "large"]
 ```
 
 configure liip loaders
 
 ```yaml
-# See dos how to configure the bundle: https://symfony.com/doc/current/bundles/LiipImagineBundle/basic-usage.html
 liip_imagine:
   # valid drivers options include "gd" or "gmagick" or "imagick"
   driver: "gd"
 
+  # define filters defined in pentatrion_upload.liip_filters
   filter_sets:
     small:
       filters:
@@ -64,11 +98,12 @@ liip_imagine:
     default:
       filesystem:
         data_root:
-          public: "%kernel.project_dir%/public"
-          private: "%kernel.project_dir%/var/uploads"
+          # must be linked with pentatrion_upload -> liip_path
+          - "%kernel.project_dir%/public"
+          - "%kernel.project_dir%/var/uploads"
 ```
 
-## Utilisation
+## Simple Utilisation
 
 in your FormType create a non mapped FileType
 
@@ -112,19 +147,10 @@ class PostController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $file = $form['file']->getData();
             if ($file) {
-                $fileInfos = $fileHelper->uploadFile(
-                    $file,
-                    'posts', // relative path
-                    'public', // origin
-                    [ // default options
-                        // 'forceFilename' => 'logo',
-                        'urlize' => true,
-                        'prefix' => '',
-                        'guessExtension' => false,
-                        'unique' => false
-                    ]
-                );
-                $post->setImage($fileInfos['filename']);
+                $fileInfos = $fileHelper->uploadFile($file, 'posts');
+
+                //  posts/my-image.jpg
+                $post->setImage($fileInfos['uploadRelativePath']);
             }
 
             $this->getDoctrine()->getManager()->flush();
@@ -136,13 +162,38 @@ class PostController extends AbstractController
 }
 ```
 
+in your twig template
+
+```twig
+<img src="{{ uploaded_file_web_path(post.image) }}" />
+<img src="{{ uploaded_image_filtered(post.image, 'small') }}" />
+```
+
+## More Details
+
+```php
+// more customization
+$fileInfos = $fileHelper->uploadFile(
+    $file,
+    'posts', // subDirectory
+    'public_uploads', // origin
+    [
+        'forceFilename' => 'logo',
+        'urlize' => true,
+        'prefix' => '',
+        'guessExtension' => false,
+        'unique' => false
+    ]
+);
+```
+
 TODO Uploader
 
 ```php
 dump($fileInfos);
 [
   "inode"       => 8653642
-  "id"          => "@public:uploads/posts/logo.svg"
+  "id"          => "@public_uploads:uploads/posts/logo.svg"
   "filename"    => "logo.svg"
   "directory"   => "posts"
   "uploadRelativePath" => "posts/logo.svg"
