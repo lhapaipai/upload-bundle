@@ -26,6 +26,7 @@ Provide Upload Helper and endpoints for a File Manager in your Symfony Applicati
 dependances:
 
 - liip/imagine-bundle
+- symfony/validator
 
 ## installation
 

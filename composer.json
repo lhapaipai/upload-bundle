@@ -16,12 +16,18 @@
     }
   ],
   "require": {
-    "php": "^7.2.5",
-    "liip/imagine-bundle": "^2.5"
+    "php": "^7.2.5 || ^8.0",
+    "liip/imagine-bundle": "^2.5",
+    "symfony/validator": "^5.2"
   },
   "autoload": {
     "psr-4": {
       "Pentatrion\\UploadBundle\\": "src/"
+    }
+  },
+  "config": {
+    "platform": {
+      "php": "7.4.14"
     }
   }
 }

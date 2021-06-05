@@ -40,7 +40,7 @@ class PentatrionUploadExtension extends Extension
     }
 
     if (!isset($config['default_origin'])) {
-      $config['default_origin'] = array_keys($config['origins'])[0];
+      $config['default_origin'] = array_keys($origins)[0];
     }
 
     $container->setParameter('pentatrion_upload.origins', $origins);

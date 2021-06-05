@@ -24,15 +24,7 @@ class FileManagerHelper {
     }
 
     return [
-      'endPoints' => [
-        'getFiles' => $this->router->generate('media_get_files'),
-        'uploadFile' => $this->router->generate('media_upload_file'),
-        'addDirectory' => $this->router->generate('media_add_directory'),
-        'editFile' => $this->router->generate('media_edit_file'),
-        'deleteFile' => $this->router->generate('media_delete_file'),
-        'showFile' => $this->router->generate('media_show_file'),
-        'downloadArchive' => $this->router->generate('media_download_archive'),
-      ],
+      'endPoint' => "/media-manager",
       'isAdmin'   => $isAdmin,
       'entryPoints' => $completeEntryPoints
     ];

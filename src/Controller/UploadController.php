@@ -15,7 +15,7 @@ use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\Routing\Annotation\Route;
 
 /**
- * @Route(defaults={"_format"="json"})
+ * @Route("/media-manager", defaults={"_format"="json"}, name="file_manager_endpoint_")
  */
 class UploadController extends AbstractController
 {
@@ -33,7 +33,7 @@ class UploadController extends AbstractController
     }
 
     /**
-     * @Route("/media-manager/get-files", name="media_get_files")
+     * @Route("/get-files", name="media_get_files")
      */
     public function getFiles(Request $request)
     {
@@ -48,7 +48,7 @@ class UploadController extends AbstractController
     }
 
     /**
-     * @Route("/media-manager/get/{mode}/{origin}/{uploadRelativePath}", name="media_show_file", defaults={"mode"="", "origin"="", "uploadRelativePath"=""}, requirements={"mode"="(show|download)", "uploadRelativePath"=".+"})
+     * @Route("/get/{mode}/{origin}/{uploadRelativePath}", name="media_show_file", defaults={"mode"="", "origin"="", "uploadRelativePath"=""}, requirements={"mode"="(show|download)", "uploadRelativePath"=".+"})
      */
     public function showFile($mode, $origin, $uploadRelativePath, Request $request, FileInfosHelperInterface $fileInfosHelper)
     {
@@ -70,7 +70,7 @@ class UploadController extends AbstractController
     }
 
     /**
-     * @Route("/media-manager/download-archive", name="media_download_archive")
+     * @Route("/download-archive", name="media_download_archive")
      */
     public function downloadFile(Request $request)
     {
@@ -95,7 +95,7 @@ class UploadController extends AbstractController
     }
 
     /**
-     * @Route("/media-manager/edit", name="media_edit_file")
+     * @Route("/edit", name="media_edit_file")
      */
     public function editFileRequest(Request $request, FileHelper $fileHelper)
     {
@@ -121,7 +121,7 @@ class UploadController extends AbstractController
     }
 
     /**
-     * @Route("/media-manager/delete", name="media_delete_file")
+     * @Route("/delete", name="media_delete_file")
      */
     public function deleteFile(Request $request, FileHelper $fileHelper, FileInfosHelperInterface $fileInfosHelper)
     {
@@ -149,7 +149,7 @@ class UploadController extends AbstractController
     }
 
     /**
-     * @Route("/media-manager/add-directory", name="media_add_directory")
+     * @Route("/add-directory", name="media_add_directory")
      */
     public function addDirectory(Request $request, FileHelper $fileHelper)
     {
@@ -171,7 +171,7 @@ class UploadController extends AbstractController
     }
 
     /**
-     * @Route("/media-manager/upload", name="media_upload_file", methods={"POST"})
+     * @Route("/upload", name="media_upload_file", methods={"POST"})
      */
     public function uploadFile(FileHelper $fileHelper, Request $request): Response
     {

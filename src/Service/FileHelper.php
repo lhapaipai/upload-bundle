@@ -1,7 +1,6 @@
 <?php
 namespace Pentatrion\UploadBundle\Service;
 
-use Gedmo\Sluggable\Util\Urlizer;
 use Liip\ImagineBundle\Imagine\Cache\CacheManager;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\Filesystem\Filesystem;

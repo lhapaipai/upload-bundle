@@ -57,7 +57,7 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
     $originName = $originName ?? $this->defaultOriginName;
 
     if (!isset($this->origins[$originName]['web_prefix'])) {
-      return $this->container->get('router')->generate('media_show_file', [
+      return $this->container->get('router')->generate('file_manager_endpoint_media_show_file', [
         'mode' => 'show',
         'origin' => $originName,
         'uploadRelativePath' => $uploadRelativePath
