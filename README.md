@@ -2,6 +2,11 @@ pentatrion/upload-bundle
 
 Work In Progress !
 
+TODO :
+
+- add constraints to the filePicker (image size/ratio)
+- add image cropper to the fileManager
+
 Provide Upload Helper and endpoints for a File Manager in your Symfony Application
 
 ## Description
@@ -169,6 +174,64 @@ in your twig template
 <img src="{{ uploaded_file_web_path(post.image) }}" />
 <img src="{{ uploaded_image_filtered(post.image, 'small') }}" />
 ```
+
+## with FormType
+
+```php
+use Pentatrion\UploadBundle\Form\FilePickerType;
+
+class AdminUserFormType extends AbstractType
+{
+    public function buildForm(FormBuilderInterface $builder, array $options)
+    {
+        $builder
+            ->add('avatar', FilePickerType::class, [
+                'required' => false,
+                'uploadDirectory' => 'profile',
+                'uploadOrigin' => 'public_uploads',
+
+                // must be any key defined in
+                // config/packages/pentatrion_upload.yaml -> liip_filters
+                'previewFilter' => 'small',
+
+                // file or image
+                'previewType' => 'image'
+            ])
+        ;
+    }
+}
+```
+
+add custom form theme for your form builder :
+
+```twig
+{%- block file_picker_widget -%}
+    {{- block('form_widget_simple') -}}
+    {% if preview.type == 'image' %}
+        <div class="preview image">
+            <img data-type="image" class="{{ preview.class }}" src="{{ uploaded_image_filtered(preview.path, preview.filter, preview.origin) }}" data-filter="{{ preview.filter }}" alt="">
+            <div class="filename">{{ preview.filename }}</div>
+            <div class="actions">
+                <a href="#" class="remove"><i class="fa-trash"></i></a>
+                <a href="#" class="browse" data-target="{{ id }}" data-filemanager="{{ picker_config | e('html_attr') }}"><i class="fa-folder"></i></a>
+            </div>
+        </div>
+    {% else %}
+        <div class="preview file">
+            <img data-type="file" src="{{ preview.path }}" alt="">
+            <div class="filename">{{ preview.filename }}</div>
+            <div class="actions">
+                <a href="#" class="remove"><i class="fa-trash"></i></a>
+                <a href="#" class="browse" data-target="{{ id }}" data-filemanager="{{ picker_config | e('html_attr') }}"><i class="fa-folder"></i></a>
+            </div>
+        </div>
+    {% endif %}
+    <button class="btn outlined browse" data-target="{{ id }}" data-filemanager="{{ picker_config | e('html_attr') }}">Parcourir</button>
+
+{%- endblock -%}
+```
+
+import `assets/file-picker.js` and `assets/file-picker.scss` in your js.
 
 ## More Details
 

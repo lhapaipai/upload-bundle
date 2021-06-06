@@ -2,11 +2,11 @@
 
 namespace Pentatrion\UploadBundle\Controller;
 
-use Gedmo\Sluggable\Util\Urlizer;
 use Pentatrion\UploadBundle\Classes\ExtendedZip;
 use Pentatrion\UploadBundle\Exception\InformativeException;
 use Pentatrion\UploadBundle\Service\FileHelper;
 use Pentatrion\UploadBundle\Service\FileInfosHelperInterface;
+use Pentatrion\UploadBundle\Service\Urlizer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\Request;

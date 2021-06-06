@@ -10,6 +10,16 @@ services:
       $liipFilters: "%pentatrion_upload.liip_filters%"
     tags: ["container.service_subscriber"]
 
+  Pentatrion\UploadBundle\Service\FileManagerHelper:
+    arguments:
+      $router: "@router"
+
+  Pentatrion\UploadBundle\Form\FilePickerType:
+    arguments:
+      $fileManagerHelper: '@Pentatrion\UploadBundle\Service\FileManagerHelper'
+      $fileInfosHelper: '@Pentatrion\UploadBundle\Service\FileInfosHelperInterface'
+    tags: ["form.type"]
+
   # c'est ce service qui peut être surchargé
   Pentatrion\UploadBundle\Service\FileInfosHelperInterface: "@pentatrion_upload.file_infos_helper"
 
@@ -33,10 +43,6 @@ services:
     arguments:
       $logger: '@Psr\Log\LoggerInterface'
     tags: ["kernel.event_subscriber"]
-
-  Pentatrion\UploadBundle\Service\FileManagerHelper:
-    arguments:
-      $router: "@router"
 
   Pentatrion\UploadBundle\Controller\UploadController:
     tags: ["controller.service_arguments"]
