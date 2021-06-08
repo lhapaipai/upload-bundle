@@ -80,11 +80,17 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
   }
 
   /* à partir d'un webPath retrouve l'url de son miniature */
-  public function getUrlThumbnail($id, $filter, $pregenerate = false) {
+  public function getUrlThumbnail($id, $filter, $pregenerate = false, $withTimeStamp = true) {
     $cacheManager = $this->container->get('cache.manager');
 
     if (!$id || !$cacheManager) {
       return;
+    }
+
+    if ($withTimeStamp) {
+      $suffix = '?'.time();
+    } else {
+      $suffix = '';
     }
 
     // on prégénère les images dont on a besoin de figer l'url (via editeur markdown)
@@ -103,10 +109,17 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
       }
       return $cacheManager->resolve($id, $filter);
     } else {
-      return $cacheManager->getBrowserPath($id,$filter,[],null,UrlGeneratorInterface::ABSOLUTE_URL);
+      return $cacheManager->getBrowserPath($id,$filter,[],null,UrlGeneratorInterface::ABSOLUTE_URL).$suffix;
     }
   }
 
+  public function getInfosById($id, $withAbsPath = false) {
+    $str = substr($id, 1);
+    $firstColon = strpos($str, ":");
+    $origin = substr($str, 0, $firstColon);
+    $uploadRelativePath = substr($str, $firstColon + 1);
+    return $this->getInfos($uploadRelativePath, $origin, $withAbsPath);
+  }
 
   public function getInfos($uploadRelativePath, $originName = null, $withAbsPath = false) {
     $absolutePath = $this->getAbsolutePath($uploadRelativePath, $originName);
@@ -125,6 +138,7 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
     $mimeType = $file->isDir() 
       ? 'directory'
       : MimeTypes::getDefault()->guessMimeType($file->getPathname());
+    list($mimePrincipal) = explode('/', $mimeType);
 
     $dir = $file->isDir();
     if ($dir) {
@@ -146,12 +160,13 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
       // ex: projet/mon-projet/fichier.jpg
       'uploadRelativePath'  => $uploadRelativePath,
       'mimeType'      => $mimeType,
+      'mimeGroup'     => $mimePrincipal,
       'type'          => $file->getType(),
       'uploader'      => 'Hugues',
       'origin'        => $originName,
       'size'          => $file->getSize(),
       'humanSize'     => self::getHumanSize($file->getSize()),
-      'createdAt'     => (new \DateTime())->setTimestamp($file->getCTime()),
+      'createdAt'     => (new \DateTime())->setTimestamp($file->getCTime())->format("c"),
       'isDir'         => $dir,
       // non défini si répertoire
       // lien direct s'il s'agit d'un dossier public
@@ -159,6 +174,18 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
       'url'           => $webPath ? self::getHost().$webPath : null,
       'icon'          => $icon
     ];
+
+    if ($mimePrincipal === 'image' && $mimeType !== "image/svg" && $mimeType !== 'image/svg+xml') {
+      list($imageWidth, $imageHeight) = getimagesize($absolutePath);
+      if (isset($imageWidth) && isset($imageHeight)) {
+        $infos['details'] = [
+          'type'    => 'image',
+          'width'   => $imageWidth,
+          'height'  => $imageHeight,
+          'ratio'   => $imageWidth / $imageHeight
+        ];
+      }
+    }
 
     if ($withAbsPath) {
       $infos['absolutePath'] = $absolutePath;

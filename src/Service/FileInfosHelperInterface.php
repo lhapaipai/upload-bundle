@@ -17,6 +17,7 @@ interface FileInfosHelperInterface
   public function eraseSensibleInformations(array $fileInfos);
 
   public function getInfos(string $uploadRelativePath, string $origin, bool $withAbsPath = false);
+  public function getInfosById(string $fileId, bool $withAbsPath = false);
 
   public function getInfosFromFileObj(\SplFileInfo $file, bool $withAbsPath = false);
 

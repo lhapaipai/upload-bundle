@@ -29,7 +29,11 @@ class UploadController extends AbstractController
     protected function isAdmin()
     {
       $user = $this->getUser();
-      return in_array('ROLE_ADMIN', $user->getRoles());
+      if ($user) {
+        return in_array('ROLE_ADMIN', $user->getRoles());
+      } else {
+          return false;
+      }
     }
 
     /**
@@ -37,25 +41,26 @@ class UploadController extends AbstractController
      */
     public function getFiles(Request $request)
     {
-        $data = json_decode($request->getContent());
+        $directory = $request->request->get('directory');
+        $origin = $request->request->get('origin');
+
         return $this->json($this->fileInfosHelper->getInfosFromDirectory(
-          $data->directory,
-          $data->origin,
+          $directory,
+          $origin,
           false,
           true // with directory infos
-        ), 200);
-
+        ));
     }
 
     /**
-     * @Route("/get/{mode}/{origin}/{uploadRelativePath}", name="media_show_file", defaults={"mode"="", "origin"="", "uploadRelativePath"=""}, requirements={"mode"="(show|download)", "uploadRelativePath"=".+"})
+     * @Route("/get-file-content/{mode}/{origin}/{uploadRelativePath}", name="media_show_file", defaults={"mode"="", "origin"="", "uploadRelativePath"=""}, requirements={"mode"="(show|download)", "uploadRelativePath"=".+"})
      */
     public function showFile($mode, $origin, $uploadRelativePath, Request $request, FileInfosHelperInterface $fileInfosHelper)
     {
         $fileInfos = $fileInfosHelper->getInfos($uploadRelativePath, $origin, true);
         
         if(!$this->fileInfosHelper::hasGrantedAccess($fileInfos, $this->getUser())) {
-            throw new InformativeException('Le fichier appartient à un projet qui ne vous concerne pas !!', 403);
+            throw new InformativeException('Vous n\'avez pas les droits suffisants pour voir le contenu de ce fichier !!', 403);
         }
 
         $disposition = $mode === 'show' ? ResponseHeaderBag::DISPOSITION_INLINE : ResponseHeaderBag::DISPOSITION_ATTACHMENT;
@@ -74,20 +79,20 @@ class UploadController extends AbstractController
      */
     public function downloadFile(Request $request)
     {
+        $fileIds = $request->request->get('files');
+        $files = [];
         $user = $this->getUser();
-        $data = json_decode($request->getContent(), true);
 
-        if (!isset($data['files']) || count($data['files']) < 0) {
+        if (count($fileIds) < 0) {
             throw new InformativeException('Erreur dans la requête, aucun fichier sélectionné', 404);
         }
 
-        $files = $data['files'];
-        foreach($files as $key => $file) {
-            $files[$key] = $this->fileInfosHelper->hydrateFileWithAbsolutePath($file);
-
-            if (!$this->fileInfosHelper::hasGrantedAccess($files[$key], $user)) {
+        foreach($fileIds as $fileId) {
+            $fileInfos = $this->fileInfosHelper->getInfosById($fileId, true);
+            if (!$this->fileInfosHelper::hasGrantedAccess($fileInfos, $user)) {
                 throw new InformativeException('Le fichier appartient à un projet qui ne vous concerne pas !!', 403);
             }
+            $files[] = $fileInfos;
         }
 
         $archiveTempPath = ExtendedZip::createArchiveFromFiles($files);
@@ -97,41 +102,67 @@ class UploadController extends AbstractController
     /**
      * @Route("/edit", name="media_edit_file")
      */
-    public function editFileRequest(Request $request, FileHelper $fileHelper)
+    public function editFileRequest(Request $request)
     {
-        $data = json_decode($request->getContent(), true);
-        $newFilename = $data['newFilename'];
-        $infos = $data['file'];
-        
-        if (is_null($newFilename) || empty($newFilename) || $newFilename[0] === '.') {
+        $infos = $request->request->all();
+        $readOnly = $request->request->getBoolean('readOnly');
+
+        if (is_null($infos['newFilename']) || empty($infos['newFilename']) || $infos['newFilename'][0] === '.') {
             throw new InformativeException('Le nom de fichier n\'est pas valide', 401);
         }
 
-        $oldCompletePath = $this->fileInfosHelper->getAbsolutePath($infos['uploadRelativePath'], $infos['origin']);
-        $newCompletePath = $this->fileInfosHelper->getAbsolutePath($infos['directory'], $infos['origin']).'/'.$newFilename;
 
-        if ($this->isAdmin() || !$infos['readOnly']) {
+        $oldCompletePath = $this->fileInfosHelper->getAbsolutePath($infos['uploadRelativePath'], $infos['origin']);
+
+        $newRelativePath = $infos['directory'].'/'.$infos['newFilename'];
+        $newCompletePath = $this->fileInfosHelper->getAbsolutePath($newRelativePath, $infos['origin']);
+
+        if ($this->isAdmin() || !$readOnly) {
             $fs = new Filesystem();
             $fs->rename($oldCompletePath, $newCompletePath);
         } else {
             throw new InformativeException('Impossible de renommer le fichier : '.$infos['filename'].' car vous n\'avez pas les droits nécessaires.', 401);
         }
         
-        return $this->json($this->fileInfosHelper->getInfosFromDirectory($infos['directory'], $infos['origin']), 200);
+        return $this->json([
+            'file' => $this->fileInfosHelper->getInfos($newRelativePath, $infos['origin'])
+        ]);
+    }
+
+    /**
+     * @Route("/crop", name="media_crop_file")
+     */
+    public function cropFile(Request $request, FileHelper $fileHelper)
+    {
+        $uploadRelativePath = $request->request->get('uploadRelativePath');
+        $origin = $request->request->get('origin');
+
+        $angle = (float) $request->request->get('rotate');
+        $x = (float) $request->request->get('x');
+        $y = (float) $request->request->get('y');
+        $width = (float) $request->request->get('width');
+        $height = (float) $request->request->get('height');
+        $finalWidth = (float) $request->request->get('finalWidth');
+        $finalHeight = (float) $request->request->get('finalHeight');
+
+        $fileHelper->cropImage($uploadRelativePath, $origin, $x, $y, $width, $height, $finalWidth, $finalHeight, $angle);
+
+        return $this->json([
+            'file' => $this->fileInfosHelper->getInfos($uploadRelativePath, $origin)
+        ]);
     }
 
     /**
      * @Route("/delete", name="media_delete_file")
      */
-    public function deleteFile(Request $request, FileHelper $fileHelper, FileInfosHelperInterface $fileInfosHelper)
+    public function deleteFile(Request $request, FileHelper $fileHelper)
     {
-        $data = json_decode($request->getContent(), true);
+        $fileIds = $request->request->get('files');
         $errors = [];
 
-        foreach ($data as $fileInfos) {
+        foreach ($fileIds as $fileId) {
 
-            // sécurité : on ne se base pas sur les informations de la requête...
-            $fileInfos = $fileInfosHelper->getInfos($fileInfos['uploadRelativePath'], $fileInfos['origin'], true);
+            $fileInfos = $this->fileInfosHelper->getInfosById($fileId, true);
             if(!$this->fileInfosHelper::hasGrantedAccess($fileInfos, $this->getUser())) {
                 $errors[] = $fileInfos['filename'];
             } else {
@@ -153,21 +184,23 @@ class UploadController extends AbstractController
      */
     public function addDirectory(Request $request, FileHelper $fileHelper)
     {
-        $data = json_decode($request->getContent());
+        $infos = $request->request->all();
 
-        $filename = Urlizer::urlize($data->filename);
+        $filename = Urlizer::urlize($infos['filename']);
         if (strlen($filename) > 128) {
             throw new InformativeException('Le nom du dossier est trop long.', 500);
         }
         $completePath = $this->fileInfosHelper->getAbsolutePath(
-            $data->directory.'/'.$filename,
-            $data->origin
+            $infos['directory'].'/'.$filename,
+            $infos['origin']
         );
 
         $fs = new FileSystem();
         $fs->mkdir($completePath);
 
-        return $this->json($this->fileInfosHelper->getInfosFromDirectory($data->directory, $data->origin, false, true), 200);
+        return $this->json([
+            'directory' => $this->fileInfosHelper->getInfos($infos['directory'].'/'.$filename, $infos['origin'])
+        ]);
     }
 
     /**
@@ -178,7 +211,6 @@ class UploadController extends AbstractController
         $fileFromRequest = $request->files->get('file');
         $destRelDir = $request->request->get('directory');
         $origin = $request->request->get('origin');
-        $fromFileManager = $request->request->getBoolean('fileManager', false);
 
         $violations = $fileHelper->validateFile($fileFromRequest, $destRelDir);
         if (count($violations) > 0) {
@@ -191,12 +223,9 @@ class UploadController extends AbstractController
             $origin,
         );
 
-        if ($fromFileManager) {
-          return $this->json($this->fileInfosHelper->getInfosFromDirectory($destRelDir, $origin), 200);
-        }
         return $this->json([
             'data' => $fileInfos
-        ], 200);
+        ]);
     }
 
 }

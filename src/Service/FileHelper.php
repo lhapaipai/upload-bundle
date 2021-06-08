@@ -1,6 +1,9 @@
 <?php
 namespace Pentatrion\UploadBundle\Service;
 
+use Imagine\Gd\Imagine;
+use Imagine\Image\Box;
+use Imagine\Image\Point;
 use Liip\ImagineBundle\Imagine\Cache\CacheManager;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\Filesystem\Filesystem;
@@ -136,18 +139,42 @@ class FileHelper implements ServiceSubscriberInterface
   public function delete(string $uploadRelativePath, $originName)
   {
     $absolutePath = $this->fileInfosHelper->getAbsolutePath($uploadRelativePath, $originName);
-    $url = $url = $this->fileInfosHelper->getWebPath($uploadRelativePath, $originName);
+    $url = $this->fileInfosHelper->getWebPath($uploadRelativePath, $originName);
 
     $fs = new Filesystem();
     $fs->remove($absolutePath);
 
     if ($url) {
-      // $this->cacheManager->remove($url);
       $this->container->get('cachemanager')->remove($url);
     }
   }
 
+  public function cropImage(string $uploadRelativePath, $origin, $x, $y, $width, $height, $finalWidth, $finalHeight, $angle = 0)
+  {
+    $absolutePath = $this->fileInfosHelper->getAbsolutePath($uploadRelativePath, $origin);
+    $url = $this->fileInfosHelper->getWebPath($uploadRelativePath, $origin);
 
+    $imagine = new Imagine();
+    $image = $imagine->open($absolutePath);
+
+    if ($angle !== 0) {
+      $image->rotate($angle);
+    }
+    if ($width >= 1 && $height >= 1) {
+      $image->crop(new Point($x,$y), new Box($width,$height));
+    }
+    if ($finalWidth >= 1 && $finalHeight >= 1) {
+      $image->resize(new Box($finalWidth, $finalHeight));
+    }
+
+    $image->save($absolutePath);
+
+    if ($url) {
+      $this->container->get('cachemanager')->remove($url);
+    }
+
+    return true;
+  }
 
   public static function getSubscribedServices()
   {
