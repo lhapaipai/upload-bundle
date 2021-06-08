@@ -139,21 +139,17 @@ class FileHelper implements ServiceSubscriberInterface
   public function delete(string $uploadRelativePath, $originName)
   {
     $absolutePath = $this->fileInfosHelper->getAbsolutePath($uploadRelativePath, $originName);
-    $url = $this->fileInfosHelper->getWebPath($uploadRelativePath, $originName);
 
     $fs = new Filesystem();
     $fs->remove($absolutePath);
 
-    if ($url) {
-      $this->container->get('cachemanager')->remove($url);
-    }
+    $liipPath = $this->fileInfosHelper->getLiipPath($uploadRelativePath, $originName);
+    $this->container->get('cachemanager')->remove($liipPath);
   }
 
   public function cropImage(string $uploadRelativePath, $origin, $x, $y, $width, $height, $finalWidth, $finalHeight, $angle = 0)
   {
     $absolutePath = $this->fileInfosHelper->getAbsolutePath($uploadRelativePath, $origin);
-    $url = $this->fileInfosHelper->getWebPath($uploadRelativePath, $origin);
-
     $imagine = new Imagine();
     $image = $imagine->open($absolutePath);
 
@@ -169,9 +165,8 @@ class FileHelper implements ServiceSubscriberInterface
 
     $image->save($absolutePath);
 
-    if ($url) {
-      $this->container->get('cachemanager')->remove($url);
-    }
+    $liipPath = $this->fileInfosHelper->getLiipPath($uploadRelativePath, $origin);
+    $this->container->get('cachemanager')->remove($liipPath);
 
     return true;
   }

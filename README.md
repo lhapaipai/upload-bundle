@@ -63,7 +63,7 @@ configure your upload directories
 
 pentatrion_upload:
   # must implement FileInfosHelperInterface
-  file_infos_helper: 'App\Service\SuiviFileInfosHelper'
+  file_infos_helper: 'App\Service\AppFileInfosHelper'
 
   origins:
     # choose the name of your choice
