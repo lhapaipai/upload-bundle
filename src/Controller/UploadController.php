@@ -110,7 +110,16 @@ class UploadController extends AbstractController
         if (is_null($infos['newFilename']) || empty($infos['newFilename']) || $infos['newFilename'][0] === '.') {
             throw new InformativeException('Le nom de fichier n\'est pas valide', 401);
         }
-        $newFilename = Urlizer::urlize($infos['newFilename']);
+
+        $extension = strtolower(pathinfo($infos['newFilename'], PATHINFO_EXTENSION));
+        $filenameWithoutExtension = pathinfo($infos['newFilename'], PATHINFO_FILENAME);
+
+
+        $newFilename = Urlizer::urlize($filenameWithoutExtension);
+
+        if ($extension !== "") {
+            $newFilename .= ".$extension";
+        }
 
         $oldCompletePath = $this->fileInfosHelper->getAbsolutePath($infos['uploadRelativePath'], $infos['origin']);
 
