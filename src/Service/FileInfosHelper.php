@@ -2,6 +2,7 @@
 
 namespace Pentatrion\UploadBundle\Service;
 
+use Doctrine\ORM\Mapping\Entity;
 use Exception;
 use Liip\ImagineBundle\Imagine\Cache\CacheManager;
 use Liip\ImagineBundle\Imagine\Data\DataManager;
@@ -14,6 +15,7 @@ use Symfony\Component\Mime\MimeTypes;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Contracts\Service\ServiceSubscriberInterface;
+use Symfony\Component\Serializer\SerializerInterface;
 
 class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInterface
 {
@@ -32,7 +34,8 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
       'cache.manager' => CacheManager::class,
       'data.manager'  => DataManager::class,
       'filter.manager' => FilterManager::class,
-      'router' => RouterInterface::class
+      'router' => RouterInterface::class,
+      'serializer' => '?'.SerializerInterface::class
     ];
   }
 
@@ -245,6 +248,26 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
     
     $data = $this->addAdditionalInfosToDirectoryFiles($data);
     return $data;
+  }
+
+  public function hydrateEntityWithUploadedFileData($entity, $uploadFields = [], $filters = [], $originName = "public_uploads") {
+    if (!is_array($entity)) {
+      $entity = $this->container->get("serializer")->normalize($entity, null);
+    }
+    foreach($uploadFields as $uploadField) {
+      if (!isset($entity[$uploadField])) continue;
+      $uploadRelativePath = $entity[$uploadField];
+      $fileData = [
+        'original' => self::getHost().$this->getWebPath($uploadRelativePath, $originName)
+      ];
+      $liipPath = $this->getLiipPath($uploadRelativePath, $originName);
+
+      foreach ($filters as $filter) {
+        $fileData[$filter] = $this->getUrlThumbnail($liipPath, $filter);
+      }
+      $entity[$uploadField] = $fileData;
+    }
+    return $entity;
   }
 
   public function hydrateFileWithAbsolutePath($fileInfos) {

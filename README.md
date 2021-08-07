@@ -1,12 +1,3 @@
-pentatrion/upload-bundle
-
-Work In Progress !
-
-TODO :
-
-- add constraints to the filePicker (image size/ratio)
-- add image cropper to the fileManager
-
 Provide Upload Helper and endpoints for a File Manager in your Symfony Application
 
 ## Description
@@ -168,11 +159,61 @@ class PostController extends AbstractController
 }
 ```
 
-in your twig template
+## Utilisation
+
+```php
+class PageController extends AbstractController
+{
+    #[Route('/page/{slug}', name: 'page_show')]
+    public function show(Page $page): Response
+    {
+        return $this->render('page/show.html.twig', [
+            'page' => $page
+        ]);
+    }
+```
+
+in your `page/show.html.twig` template
 
 ```twig
-<img src="{{ uploaded_file_web_path(post.image) }}" />
-<img src="{{ uploaded_image_filtered(post.image, 'small') }}" />
+<img src="{{ uploaded_file_web_path(page.image) }}" />
+<img src="{{ uploaded_image_filtered(page.image, 'small') }}" />
+```
+
+## For your API Calls
+
+```php
+#[Route('/api', name: 'api_', defaults:["_format"=>"json"])]
+class ApiController extends AbstractController
+{
+
+    #[Route('/page/{id}', name: 'projects')]
+    public function showProjects(Page $page, FileInfosHelper $fileInfosHelper): Response
+    {
+        // hydrate image field, with original/small/large webpaths.
+        $page = $fileInfosHelper->hydrateEntityWithUploadedFileData($page, ["image"], ["small", "large"]);
+
+        return new JsonResponse($projects);
+    }
+}
+```
+
+return
+
+```json
+{
+  "id": 12,
+  "title": "My post",
+  "status": "published",
+  "content": "Content",
+  "image": {
+    "original": "http://my-domain.com/uploads/page/beach.jpg",
+    "small": "http://my-domain.com/media/cache/small/uploads/page/beach.jpg",
+    "large": "http://my-domain.com/media/cache/large/uploads/page/beach.jpg"
+  },
+  "createdAt": "2021-05-01T00:00:00+02:00",
+  "website": "..."
+}
 ```
 
 ## with FormType
@@ -193,14 +234,25 @@ class AdminUserFormType extends AbstractType
                 // must be any key defined in
                 // config/packages/pentatrion_upload.yaml -> liip_filters
                 'previewFilter' => 'small',
+                'previewClass' => 'rounded-corner',
 
                 // file or image
-                'previewType' => 'image'
+                'previewType' => 'image',
+
+                'fileValidation' => [
+                    'mimeGroup' => 'image',
+                    'imageOptions' => [
+                        'ratio' => 1,
+                        'minWidth' => 300
+                    ]
+                ]
             ])
         ;
     }
 }
 ```
+
+for full-list of imageOptions, have a look into [mini-file-manager#Configuration](https://github.com/lhapaipai/mini-file-manager#configuration) repository.
 
 add custom form theme for your form builder :
 

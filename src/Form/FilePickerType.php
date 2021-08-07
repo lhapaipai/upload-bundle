@@ -27,11 +27,15 @@ class FilePickerType extends AbstractType
     $value = $form->getData();
 
     $fileManagerConfig = json_encode(
-      $this->fileManagerHelper->getConfig([[
-        'directory' => $options['uploadDirectory'],
-        'label' => $options['uploadDirectoryLabel'],
-        'origin'=> $options['uploadOrigin']
-      ]])
+      $this->fileManagerHelper->completeConfig([
+        'entryPoints' => [[
+          'directory' => $options['uploadDirectory'],
+          'label' => $options['uploadDirectoryLabel'],
+          'origin'=> $options['uploadOrigin'],
+        ]],
+        'fileValidation' => $options['fileValidation'],
+        'originalSelection' => $value ? [$value] : null
+      ])
     );
 
     $view->vars['row_attr']['class'] = 'file-picker'.($value?' with-value':'');
@@ -69,7 +73,8 @@ class FilePickerType extends AbstractType
       'uploadDirectoryLabel' => 'Répertoire principal',
       'previewFilter' => 'small',
       'previewType' => 'file',
-      'previewClass' => 'rounded-corner'
+      'previewClass' => '',
+      'fileValidation' => null
     ]);
   }
 
