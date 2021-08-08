@@ -10,6 +10,8 @@ services:
       $liipFilters: "%pentatrion_upload.liip_filters%"
     tags: ["container.service_subscriber"]
 
+  Pentatrion\UploadBundle\Service\FileInfosHelper: "@pentatrion_upload.file_infos_helper"
+
   Pentatrion\UploadBundle\Service\FileManagerHelper:
     arguments:
       $router: "@router"

@@ -1,5 +1,7 @@
-// import "mini-file-manager/dist/style.css";
-import { openFileManager } from "mini-file-manager/src/main-without-theme";
+import "mini-file-manager/dist/style.css";
+import "./file-picker.scss";
+
+import { openFileManager } from "mini-file-manager";
 
 class FilePicker {
   constructor(elt) {

@@ -1,36 +1,30 @@
-Provide Upload Helper and endpoints for a File Manager in your Symfony Application
+<p align="center">
+  <img width="100" src="https://raw.githubusercontent.com/lhapaipai/upload-bundle/main/docs/symfony.svg" alt="Symfony logo">
+</p>
 
-## Description
+# UploadBundle for your Symfony application.
 
-2 twig functions
+This Symfony bundle provides :
 
-```twig
+- Upload Helpers
+- Endpoints for a [Mini File Manager](https://github.com/lhapaipai/mini-file-manager) in your Symfony Application.
+- Twig functions for your uploaded files
+- FilePickerType for your forms
 
-<!-- /uploads/folder/my-uploaded-file.pdf -->
-{{ uploaded_file_web_path("folder/my-uploaded-file.pdf") }}
-
-<!-- /media-manager/get/show/private_uploads/folder/my-uploaded-file.pdf -->
-{{ uploaded_file_web_path("folder/my-uploaded-file.pdf", "private_uploads") }}
-
-<!-- http://localhost/media/cache/resolve/small/posts/logo.jpg -->
-{{ uploaded_image_filtered('posts/logo.jpg', 'small') }}
-
-<!-- http://localhost/media/cache/resolve/small/posts/logo.jpg -->
-{{ uploaded_image_filtered('posts/logo.jpg', 'small', 'private_uploads') }}
-```
+## installation
 
 dependances:
 
 - liip/imagine-bundle
 - symfony/validator
-
-## installation
+- symfony/form
+- symfony/security-bundle
 
 ```bash
 composer require pentatrion/upload-bundle
 ```
 
-add upload routes to your Symfony app
+add upload routes to your Symfony app. (routes starting with `/media-manager`. Type in your console `symfony console debug:router`)
 
 ```yaml
 # config/routes/pentatrion_upload.yaml
@@ -39,68 +33,45 @@ _pentatrion_upload:
   type: annotation
 ```
 
-configure your upload directories
+If you want to have thumbnails, configure liip loaders
 
 ```yaml
-## config/packages/pentatrion_upload.yaml
-## default config
-# pentatrion_upload:
-#   file_infos_helper: 'Pentatrion\UploadBundle\Service\FileInfosHelper'
-#   origins:
-#     public_uploads:
-#       path: "%kernel.project_dir%/public/uploads"
-#       liip_path: "/uploads"
-#   liip_filters: ["small", "large"]
-
-pentatrion_upload:
-  # must implement FileInfosHelperInterface
-  file_infos_helper: 'App\Service\AppFileInfosHelper'
-
-  origins:
-    # choose the name of your choice
-    public_uploads:
-      # if directory is inside %kernel.project_dir%/public, files
-      # will be directly accessible.
-      path: "%kernel.project_dir%/public/uploads"
-      # prefix to add in order to be found by a liip_imagine loader
-      liip_path: "/uploads"
-    private_uploads:
-      path: "%kernel.project_dir%/var/uploads"
-      liip_path: ""
-
-  # if multiple origins
-  default_origin: "public_uploads"
-
-  liip_filters: ["small", "large"]
-```
-
-configure liip loaders
-
-```yaml
+# config/packages/liip_imagine.yaml
 liip_imagine:
-  # valid drivers options include "gd" or "gmagick" or "imagick"
   driver: "gd"
 
   # define filters defined in pentatrion_upload.liip_filters
+  # (at least small filter)
   filter_sets:
     small:
       filters:
         thumbnail: { size: [250, 250], mode: inset, allow_upscale: true }
 
-    large:
-      filters:
-        thumbnail: { size: [1500, 1500], mode: inset, allow_upscale: false }
+    # large:
+    #   filters:
+    #     thumbnail: { size: [1500, 1500], mode: inset, allow_upscale: false }
 
   loaders:
     default:
       filesystem:
         data_root:
-          # must be linked with pentatrion_upload -> liip_path
+          # must be linked with pentatrion_upload -> origin.[origin-name].liip_path
           - "%kernel.project_dir%/public"
-          - "%kernel.project_dir%/var/uploads"
+
+          # if you want private upload directory
+          # - "%kernel.project_dir%/var/uploads"
 ```
 
-## Simple Utilisation
+Create directories with Apache user access in upload path and liipImagineBundle cache path (`public/uploads`, `public/media`)
+
+```console
+mkdir public/{uploads,media}
+chmod 777 public/{uploads,media}
+```
+
+## Utilisation
+
+### FileHelper
 
 in your FormType create a non mapped FileType
 
@@ -123,7 +94,6 @@ class PostType extends AbstractType
             ])
         ;
     }
-
     // ...
 }
 ```
@@ -151,7 +121,6 @@ class PostController extends AbstractController
             }
 
             $this->getDoctrine()->getManager()->flush();
-
             // ...
         }
         // ...
@@ -159,7 +128,62 @@ class PostController extends AbstractController
 }
 ```
 
-## Utilisation
+```php
+$file // file from $_FILES
+$directory = 'relative/path'; // path to add into public_uploads.
+$options = [
+  'forceFilename' => 'beach.jpg',
+  'prefix' => null,           // prefix your file name 'img-'
+  'guessExtension' => false,  // guess Extension from content
+                              //(if you don't trust the uploader)
+  'urlize' => true,           // my File Name.jPg -> my-file-name.jpg
+  'unique' => true,           // suffixe your file with hash
+                              // beach-[hash].jpg
+];
+
+// configured in config/packages/pentatrion_upload.yaml
+// pentatrion_upload.origins.<origin>
+
+// default value public_uplads -> "%kernel.project_dir%/public/uploads"
+$originName = 'public_uploads';
+
+$fileInfos = $fileHelper->uploadFile($file, $directory, $originName, $options);
+
+print_r($fileInfos);
+```
+
+```json
+{
+  "inode": 1575770,
+  "id": "@public_uploads:beach.jpg",
+  "filename": "beach.jpg",
+  "directory": "",
+  "uploadRelativePath": "beach.jpg",
+  "mimeType": "image/jpeg",
+  "mimeGroup": "image",
+  "type": "file",
+  "uploader": "John Doe",
+  "origin": "public_uploads",
+  "size": 134558,
+  "humanSize": "131.4 Ko",
+  "createdAt": "2021-08-07T23:12:09+02:00",
+  "isDir": false,
+  "url": "http://mini-file-manager.local/uploads/beach.jpg",
+  "urlTimestamped": "http://mini-file-manager.local/uploads/beach.jpg?1628410071",
+  "icon": "/file-manager/icons/image-jpg.svg",
+  "details": { "type": "image", "width": 1200, "height": 1200, "ratio": 1 },
+  "thumbnails": {
+    "small": "http://mini-file-manager.local/media/cache/small/uploads/beach.jpg?1628410071"
+  }
+}
+```
+
+### Twig functions
+
+The bundle provide 2 twig functions :
+
+- uploaded_file_web_path('path/to/file', '<origin>')
+- uploaded_image_filtered('path/to/file', 'filter', '<origin>')
 
 ```php
 class PageController extends AbstractController
@@ -176,11 +200,28 @@ class PageController extends AbstractController
 in your `page/show.html.twig` template
 
 ```twig
-<img src="{{ uploaded_file_web_path(page.image) }}" />
-<img src="{{ uploaded_image_filtered(page.image, 'small') }}" />
+<!-- folder/my-uploaded-file.pdf -->
+{{ page.file }}
+
+<!-- /uploads/folder/my-uploaded-file.pdf -->
+{{ uploaded_file_web_path(page.file) }}
+
+<!-- /media-manager/get/show/private_uploads/folder/my-uploaded-file.pdf -->
+{{ uploaded_file_web_path(page.file, "private_uploads") }}
+
+<!-- for your original -->
+<!-- <img src="/uploads/folder/logo.jpg"/> -->
+<img src="{{ uploaded_file_web_path(page.image) }}"/>
+
+<!-- for your cropped image (250x250px) -->
+<!-- <img src="http://localhost/media/cache/resolve/small/posts/logo.jpg"/> -->
+<img src="{{ uploaded_image_filtered(page.image, 'small') }}"/>
+
+<!-- <img src="http://localhost/media/cache/resolve/small/posts/logo.jpg"/> -->
+<img src="{{ uploaded_image_filtered(page.image, 'small', 'private_uploads') }}"/>
 ```
 
-## For your API Calls
+## API Helper
 
 ```php
 #[Route('/api', name: 'api_', defaults:["_format"=>"json"])]
@@ -198,7 +239,21 @@ class ApiController extends AbstractController
 }
 ```
 
-return
+before hydration
+
+```json
+{
+  "id": 12,
+  "title": "My post",
+  "status": "published",
+  "content": "Content",
+  "image": "page/beach",
+  "createdAt": "2021-05-01T00:00:00+02:00",
+  "website": "..."
+}
+```
+
+after hydration
 
 ```json
 {
@@ -216,7 +271,123 @@ return
 }
 ```
 
-## with FormType
+## with Mini File Manager JS library.
+
+this bundle has been designed to integrate perfectly with [Mini File Manager](https://github.com/lhapaipai/mini-file-manager).
+
+```console
+npm i mini-file-manager
+```
+
+### File Manager / File Picker
+
+```php
+use Pentatrion\UploadBundle\Service\FileManagerHelper;
+
+class ManagerController extends AbstractController
+{
+    #[Route('/manager', name: 'manager')]
+    public function index(FileManagerHelper $fileManagerHelper): Response
+    {
+        $config = $fileManagerHelper->completeConfig([
+            'isAdmin' => true,
+            'entryPoints' => [
+                [
+                    'label' => 'Uploads',
+                    'directory' => '',
+                    'origin' => 'public_uploads',
+                    'readOnly' => false,
+                    'icon' => 'fa-lock'
+                ]
+            ]
+        ]);
+        return $this->render('manager/index.html.twig', [
+            'fileManagerConfig' => $config,
+        ]);
+    }
+}
+```
+
+Twig template for the file manager.
+the mini-file-manager config is placed in data-props attribute.
+
+```twig
+<head>
+  <link rel="stylesheet" href="/dist/style.css" />
+  <script src="/dist/mini-file-manager.umd.js"></script>
+</head>
+<body>
+  <div id="file-manager" data-props="{{ fileManagerConfig | json_encode | e('html_attr') }}"></div>
+
+  <script>
+    miniFileManager.createFileManager("#file-manager");
+  </script>
+</body>
+```
+
+Twig template for the file picker.
+
+```twig
+
+<head>
+  <link rel="stylesheet" href="/dist/style.css" />
+  <script src="/dist/mini-file-manager.umd.js"></script>
+</head>
+<body>
+  <button id="find-file" data-props="{{ fileManagerConfig | json_encode | e('html_attr') }}">Find</button>
+
+  <script>
+    let findBtn = document.getElementById("find-file");
+    findBtn.addEventListener("click", () => {
+      let options = JSON.parse(findBtn.dataset.props);
+      miniFileManager.openFileManager(
+        options,
+        (files) => {
+          console.log("onSuccess", files);
+        },
+        () => {
+          console.log("onAbort");
+        }
+      );
+    });
+  </script>
+</body>
+```
+
+#### without helpers
+
+```twig
+<head>
+  <link rel="stylesheet" href="/dist/style.css" />
+  <script src="/dist/mini-file-manager.umd.js"></script>
+</head>
+<body>
+  <div id="file-manager"></div>
+
+  <script>
+    let config = {
+      "endPoint": "/media-manager",
+      "isAdmin": true,
+      "fileValidation": [],
+      "entryPoints": [
+        {
+          "directory": "",
+          "origin": "public_uploads",
+          "readOnly": false,
+          "icon": "fa-lock",
+          "label": "Uploads"
+        }
+      ]
+    };
+
+    miniFileManager.createFileManager("#file-manager", config);
+  </script>
+</body>
+```
+
+If you want more details about configuration, check [Mini File Manager](https://github.com/lhapaipai/mini-file-manager).
+
+## FilePickerType with mini-file-manager for your form
 
 ```php
 use Pentatrion\UploadBundle\Form\FilePickerType;
@@ -243,7 +414,8 @@ class AdminUserFormType extends AbstractType
                     'mimeGroup' => 'image',
                     'imageOptions' => [
                         'ratio' => 1,
-                        'minWidth' => 300
+                        'minWidth' => 300,
+                        //...
                     ]
                 ]
             ])
@@ -256,7 +428,31 @@ for full-list of imageOptions, have a look into [mini-file-manager#Configuration
 
 add custom form theme for your form builder :
 
+```yaml
+# config/packages/twig.yaml
+twig:
+  default_path: "%kernel.project_dir%/templates"
+  form_themes: ["_form_theme.html.twig"]
+```
+
 ```twig
+{# templates/_form_theme.html.twig #}
+
+{% use "form_div_layout.html.twig" %}
+
+{%- block form_row -%}
+    {%- set widget_attr = {} -%}
+    {%- if help is not empty -%}
+        {%- set widget_attr = {attr: {'aria-describedby': id ~"_help"}} -%}
+    {%- endif -%}
+    <div{% with {attr: row_attr|merge({class: (row_attr.class|default('') ~ ' form-group')|trim})} %}{{ block('attributes') }}{% endwith %}>
+        {{- form_label(form) -}}
+        {{- form_widget(form, widget_attr) -}}
+        {{- form_errors(form) -}}
+        {{- form_help(form) -}}
+    </div>
+{%- endblock form_row -%}
+
 {%- block file_picker_widget -%}
     {{- block('form_widget_simple') -}}
     {% if preview.type == 'image' %}
@@ -283,52 +479,78 @@ add custom form theme for your form builder :
 {%- endblock -%}
 ```
 
-import `assets/file-picker.js` and `assets/file-picker.scss` in your js.
+import `assets/file-picker.js` and `assets/file-picker.scss` from `pentatrion/upload-bundle` in your js.
 
-## More Details
+## Bundle Configuration
 
-```php
-// more customization
-$fileInfos = $fileHelper->uploadFile(
-    $file,
-    'posts', // subDirectory
-    'public_uploads', // origin
-    [
-        'forceFilename' => 'logo',
-        'urlize' => true,
-        'prefix' => '',
-        'guessExtension' => false,
-        'unique' => false
-    ]
-);
+configure your upload directories
+
+### default config
+
+```yaml
+# config/packages/pentatrion_upload.yaml
+pentatrion_upload:
+  file_infos_helper: 'Pentatrion\UploadBundle\Service\FileInfosHelper'
+  origins:
+    public_uploads:
+      path: "%kernel.project_dir%/public/uploads"
+      liip_path: "/uploads"
+  liip_filters: ["small"]
 ```
 
-TODO Uploader
+### advanced configuration
 
-```php
-dump($fileInfos);
-[
-  "inode"       => 8653642
-  "id"          => "@public_uploads:uploads/posts/logo.svg"
-  "filename"    => "logo.svg"
-  "directory"   => "posts"
-  "uploadRelativePath" => "posts/logo.svg"
-  "mimeType"    => "image/svg"
-  "type"        => "file"
-  "uploader"    => "Hugues"
-  "origin"      => "public"
-  "size"        => 3021
-  "humanSize"   => "3.0 Ko"
-  "createdAt"   => DateTime
-  "isDir"       => false
-  "url"         => "http://localhost/uploads/posts/logo.svg"
-  "icon"        => "/images/icons/image-svg+xml.svg"
-  "thumbnails"  => [
-    "small"     => "http://localhost/uploads/posts/logo.svg"
-    "full"  => "http://localhost/uploads/posts/logo.svg"
-  ]
-]
+```yaml
+# config/packages/pentatrion_upload.yaml
+pentatrion_upload:
+  # Advanced config
+  # must implement FileInfosHelperInterface
+  file_infos_helper: 'App\Service\AppFileInfosHelper'
+
+  origins:
+    # choose the name of your choice
+    public_uploads:
+      # if directory is inside %kernel.project_dir%/public, files
+      # will be directly accessible.
+      path: "%kernel.project_dir%/public/uploads"
+      # prefix to add in order to be found by a liip_imagine loader
+      liip_path: "/uploads"
+    private_uploads:
+      path: "%kernel.project_dir%/var/uploads"
+      liip_path: ""
+
+  # if multiple origins
+  default_origin: "public_uploads"
+
+  # when you get infos from uploaded file put filters (liip_imagine.filter_sets)
+  # you want the url used with mini-file-manager, put "small" to get thumbnails
+  liip_filters: ["small", "large"]
 ```
 
-verify to create directory with http user access
-in origins path, liipImagineBundle cache path : `public/media`.
+if you set your class who implement FileInfosHelperInterface (`file_infos_helper` option), you can extends FileInfosHelper base class.
+
+```php
+<?php
+namespace App\Service;
+use Pentatrion\UploadBundle\Service\FileInfosHelper;
+
+class AppFileInfosHelper extends FileInfosHelper
+{
+}
+
+```
+
+You have to add 3 binding for your constructor
+
+```yaml
+#config/services.yaml
+services:
+  # default configuration for services in *this* file
+  _defaults:
+    autowire: true # Automatically injects dependencies in your services.
+    autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+    bind:
+      $liipFilters: "%pentatrion_upload.liip_filters%"
+      $defaultOriginName: "%pentatrion_upload.default_origin%"
+      $uploadOrigins: "%pentatrion_upload.origins%"
+```

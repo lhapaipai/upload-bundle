@@ -23,7 +23,6 @@ class AssetExtension extends AbstractExtension
     public function getFunctions(): array
     {
         return [
-          new TwigFunction('uploaded_asset', [$this, 'getUploadedAssetPath']),
           new TwigFunction('uploaded_file_id', [$this, 'getUploadedFileId']),
           new TwigFunction('uploaded_file_web_path', [$this, 'getUploadedFileWebPath']),
           new TwigFunction('uploaded_image_filtered', [$this, 'getUploadedImageFiltered']),
@@ -52,17 +51,4 @@ class AssetExtension extends AbstractExtension
       }
     }
 
-    public function getUploadedAssetPath($uploadRelativePath, $filter = null, $originName = null)
-    {
-      $id = $this->fileInfosHelper->getId($uploadRelativePath, $originName);
-      $extension = substr($id, strrpos($id, '.') + 1);
-
-      if (is_null($filter) || $extension === 'svg') {
-        // si on n'a pas défini de filtre on affiche l'original dans ce cas seul les fichiers
-        // publics peuvent l'afficher
-        return $this->fileInfosHelper->getWebPath($uploadRelativePath, $originName);
-      } else {
-        return $this->fileInfosHelper->getUrlThumbnail($id, $filter);
-      }
-    }
 }

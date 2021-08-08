@@ -19,6 +19,7 @@ class Configuration implements ConfigurationInterface
         ->end()
         ->arrayNode('liip_filters')
           ->scalarPrototype()->end()
+            ->defaultValue(["small"])
         ->end()
         ->scalarNode('default_origin')->end()
         ->arrayNode('origins')
