@@ -6,10 +6,10 @@
 
 This Symfony bundle provides :
 
-- Upload Helpers
-- Endpoints for a [Mini File Manager](https://github.com/lhapaipai/mini-file-manager) in your Symfony Application.
-- Twig functions for your uploaded files
-- FilePickerType for your forms
+-   Upload Helpers
+-   Endpoints for a [Mini File Manager](https://github.com/lhapaipai/mini-file-manager) in your Symfony Application.
+-   Twig functions for your uploaded files
+-   FilePickerType for your forms
 
 ## installation
 
@@ -19,9 +19,9 @@ composer require pentatrion/upload-bundle
 
 Recommended optional dependencies
 
-- symfony/validator : required for upload file validation
-- liip/imagine-bundle : required to use thumbnails with your file manager.
-- imagine/imagine : required for image modification (resize, crop, rotation)
+-   symfony/validator : required for upload file validation
+-   liip/imagine-bundle : required to use thumbnails with your file manager.
+-   imagine/imagine : required for image modification (resize, crop, rotation)
 
 ```console
 composer require symfony/validator liip/imagine-bundle imagine/imagine
@@ -29,8 +29,7 @@ composer require symfony/validator liip/imagine-bundle imagine/imagine
 
 Other dependencies
 
-- symfony/form : only required with FilePickerType
-- symfony/security-bundle : only required with FilePickerType
+-   symfony/security-bundle : only required with FilePickerType
 
 add upload routes to your Symfony app.
 
@@ -39,8 +38,8 @@ add upload routes to your Symfony app.
 
 # routes starting with /media-manager
 _pentatrion_upload:
-  resource: "@PentatrionUploadBundle/Controller/UploadController.php"
-  type: annotation
+    resource: "@PentatrionUploadBundle/Controller/UploadController.php"
+    type: annotation
 ```
 
 add a config file for your bundle
@@ -49,12 +48,12 @@ add a config file for your bundle
 # config/packages/pentatrion_upload.yaml
 # default configuration
 pentatrion_upload:
-  file_infos_helper: 'Pentatrion\UploadBundle\Service\FileInfosHelper'
-  origins:
-    public_uploads:
-      path: "%kernel.project_dir%/public/uploads"
-      liip_path: "/uploads"
-  liip_filters: ["small"]
+    file_infos_helper: 'Pentatrion\UploadBundle\Service\FileInfosHelper'
+    origins:
+        public_uploads:
+            path: "%kernel.project_dir%/public/uploads"
+            liip_path: "/uploads"
+    liip_filters: ["small"]
 ```
 
 If you have installed `liip/imagine-bundle`, configure at least the `small` filter for your thumbnails.
@@ -62,28 +61,29 @@ If you have installed `liip/imagine-bundle`, configure at least the `small` filt
 ```yaml
 # config/packages/liip_imagine.yaml
 liip_imagine:
-  driver: "gd"
+    driver: "gd"
 
-  # define filters defined in pentatrion_upload.liip_filters
-  # (at least small filter)
-  filter_sets:
-    small:
-      filters:
-        thumbnail: { size: [250, 250], mode: inset, allow_upscale: true }
+    # define filters defined in pentatrion_upload.liip_filters
+    # (at least small filter)
+    filter_sets:
+        small:
+            filters:
+                thumbnail:
+                    { size: [250, 250], mode: inset, allow_upscale: true }
 
-    # large:
-    #   filters:
-    #     thumbnail: { size: [1500, 1500], mode: inset, allow_upscale: false }
+        # large:
+        #   filters:
+        #     thumbnail: { size: [1500, 1500], mode: inset, allow_upscale: false }
 
-  loaders:
-    default:
-      filesystem:
-        data_root:
-          # must be linked with pentatrion_upload -> origin.[origin-name].liip_path
-          - "%kernel.project_dir%/public"
+    loaders:
+        default:
+            filesystem:
+                data_root:
+                    # must be linked with pentatrion_upload -> origin.[origin-name].liip_path
+                    - "%kernel.project_dir%/public"
 
-          # if you want private upload directory
-          # - "%kernel.project_dir%/var/uploads"
+                    # if you want private upload directory
+                    # - "%kernel.project_dir%/var/uploads"
 ```
 
 Create directories with Apache user access in upload path and liipImagineBundle cache path (`public/uploads`, `public/media`)
@@ -178,27 +178,27 @@ print_r($fileInfos);
 
 ```json
 {
-  "inode": 1575770,
-  "id": "@public_uploads:beach.jpg",
-  "filename": "beach.jpg",
-  "directory": "",
-  "uploadRelativePath": "beach.jpg",
-  "mimeType": "image/jpeg",
-  "mimeGroup": "image",
-  "type": "file",
-  "uploader": "John Doe",
-  "origin": "public_uploads",
-  "size": 134558,
-  "humanSize": "131.4 Ko",
-  "createdAt": "2021-08-07T23:12:09+02:00",
-  "isDir": false,
-  "url": "http://mini-file-manager.local/uploads/beach.jpg",
-  "urlTimestamped": "http://mini-file-manager.local/uploads/beach.jpg?1628410071",
-  "icon": "/file-manager/icons/image-jpg.svg",
-  "details": { "type": "image", "width": 1200, "height": 1200, "ratio": 1 },
-  "thumbnails": {
-    "small": "http://mini-file-manager.local/media/cache/small/uploads/beach.jpg?1628410071"
-  }
+    "inode": 1575770,
+    "id": "@public_uploads:beach.jpg",
+    "filename": "beach.jpg",
+    "directory": "",
+    "uploadRelativePath": "beach.jpg",
+    "mimeType": "image/jpeg",
+    "mimeGroup": "image",
+    "type": "file",
+    "uploader": "John Doe",
+    "origin": "public_uploads",
+    "size": 134558,
+    "humanSize": "131.4 Ko",
+    "createdAt": "2021-08-07T23:12:09+02:00",
+    "isDir": false,
+    "url": "http://mini-file-manager.local/uploads/beach.jpg",
+    "urlTimestamped": "http://mini-file-manager.local/uploads/beach.jpg?1628410071",
+    "icon": "/file-manager/icons/image-jpg.svg",
+    "details": { "type": "image", "width": 1200, "height": 1200, "ratio": 1 },
+    "thumbnails": {
+        "small": "http://mini-file-manager.local/media/cache/small/uploads/beach.jpg?1628410071"
+    }
 }
 ```
 
@@ -206,8 +206,8 @@ print_r($fileInfos);
 
 The bundle provide 2 twig functions :
 
-- uploaded_file_web_path('path/to/file', '<origin>')
-- uploaded_image_filtered('path/to/file', 'filter', '<origin>')
+-   uploaded_file_web_path('path/to/file', '<origin>')
+-   uploaded_image_filtered('path/to/file', 'filter', '<origin>')
 
 ```php
 class PageController extends AbstractController
@@ -267,13 +267,13 @@ before hydration
 
 ```json
 {
-  "id": 12,
-  "title": "My post",
-  "status": "published",
-  "content": "Content",
-  "image": "page/beach",
-  "createdAt": "2021-05-01T00:00:00+02:00",
-  "website": "..."
+    "id": 12,
+    "title": "My post",
+    "status": "published",
+    "content": "Content",
+    "image": "page/beach",
+    "createdAt": "2021-05-01T00:00:00+02:00",
+    "website": "..."
 }
 ```
 
@@ -281,17 +281,17 @@ after hydration
 
 ```json
 {
-  "id": 12,
-  "title": "My post",
-  "status": "published",
-  "content": "Content",
-  "image": {
-    "original": "http://my-domain.com/uploads/page/beach.jpg",
-    "small": "http://my-domain.com/media/cache/small/uploads/page/beach.jpg",
-    "large": "http://my-domain.com/media/cache/large/uploads/page/beach.jpg"
-  },
-  "createdAt": "2021-05-01T00:00:00+02:00",
-  "website": "..."
+    "id": 12,
+    "title": "My post",
+    "status": "published",
+    "content": "Content",
+    "image": {
+        "original": "http://my-domain.com/uploads/page/beach.jpg",
+        "small": "http://my-domain.com/media/cache/small/uploads/page/beach.jpg",
+        "large": "http://my-domain.com/media/cache/large/uploads/page/beach.jpg"
+    },
+    "createdAt": "2021-05-01T00:00:00+02:00",
+    "website": "..."
 }
 ```
 
@@ -455,8 +455,8 @@ add custom form theme for your form builder :
 ```yaml
 # config/packages/twig.yaml
 twig:
-  default_path: "%kernel.project_dir%/templates"
-  form_themes: ["_form_theme.html.twig"]
+    default_path: "%kernel.project_dir%/templates"
+    form_themes: ["_form_theme.html.twig"]
 ```
 
 ```twig
@@ -514,28 +514,28 @@ configure your upload directories
 ```yaml
 # config/packages/pentatrion_upload.yaml
 pentatrion_upload:
-  # Advanced config
-  # must implement FileInfosHelperInterface
-  file_infos_helper: 'App\Service\AppFileInfosHelper'
+    # Advanced config
+    # must implement FileInfosHelperInterface
+    file_infos_helper: 'App\Service\AppFileInfosHelper'
 
-  origins:
-    # choose the name of your choice
-    public_uploads:
-      # if directory is inside %kernel.project_dir%/public, files
-      # will be directly accessible.
-      path: "%kernel.project_dir%/public/uploads"
-      # prefix to add in order to be found by a liip_imagine loader
-      liip_path: "/uploads"
-    private_uploads:
-      path: "%kernel.project_dir%/var/uploads"
-      liip_path: ""
+    origins:
+        # choose the name of your choice
+        public_uploads:
+            # if directory is inside %kernel.project_dir%/public, files
+            # will be directly accessible.
+            path: "%kernel.project_dir%/public/uploads"
+            # prefix to add in order to be found by a liip_imagine loader
+            liip_path: "/uploads"
+        private_uploads:
+            path: "%kernel.project_dir%/var/uploads"
+            liip_path: ""
 
-  # if multiple origins
-  default_origin: "public_uploads"
+    # if multiple origins
+    default_origin: "public_uploads"
 
-  # when you get infos from uploaded file put filters (liip_imagine.filter_sets)
-  # you want the url used with mini-file-manager, put "small" to get thumbnails
-  liip_filters: ["small", "large"]
+    # when you get infos from uploaded file put filters (liip_imagine.filter_sets)
+    # you want the url used with mini-file-manager, put "small" to get thumbnails
+    liip_filters: ["small", "large"]
 ```
 
 if you set your class who implement FileInfosHelperInterface (`file_infos_helper` option), you can extends FileInfosHelper base class.
@@ -556,12 +556,12 @@ You have to add 3 binding for your constructor
 ```yaml
 #config/services.yaml
 services:
-  # default configuration for services in *this* file
-  _defaults:
-    autowire: true # Automatically injects dependencies in your services.
-    autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
-    bind:
-      $liipFilters: "%pentatrion_upload.liip_filters%"
-      $defaultOriginName: "%pentatrion_upload.default_origin%"
-      $uploadOrigins: "%pentatrion_upload.origins%"
+    # default configuration for services in *this* file
+    _defaults:
+        autowire: true # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+        bind:
+            $liipFilters: "%pentatrion_upload.liip_filters%"
+            $defaultOriginName: "%pentatrion_upload.default_origin%"
+            $uploadOrigins: "%pentatrion_upload.origins%"
 ```
