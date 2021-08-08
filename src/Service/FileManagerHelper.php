@@ -4,11 +4,7 @@ namespace Pentatrion\UploadBundle\Service;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class FileManagerHelper {
-  private $router;
 
-  public function __construct(UrlGeneratorInterface $router) {
-    $this->router = $router;
-  }
   /** 
    * @deprecated use completeConfig instead
    */

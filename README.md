@@ -13,27 +13,51 @@ This Symfony bundle provides :
 
 ## installation
 
-dependances:
-
-- liip/imagine-bundle
-- symfony/validator
-- symfony/form
-- symfony/security-bundle
-
-```bash
+```console
 composer require pentatrion/upload-bundle
 ```
 
-add upload routes to your Symfony app. (routes starting with `/media-manager`. Type in your console `symfony console debug:router`)
+Recommended optional dependencies
+
+- symfony/validator : required for upload file validation
+- liip/imagine-bundle : required to use thumbnails with your file manager.
+- imagine/imagine : required for image modification (resize, crop, rotation)
+
+```console
+composer require symfony/validator liip/imagine-bundle imagine/imagine
+```
+
+Other dependencies
+
+- symfony/form : only required with FilePickerType
+- symfony/security-bundle : only required with FilePickerType
+
+add upload routes to your Symfony app.
 
 ```yaml
 # config/routes/pentatrion_upload.yaml
+
+# routes starting with /media-manager
 _pentatrion_upload:
   resource: "@PentatrionUploadBundle/Controller/UploadController.php"
   type: annotation
 ```
 
-If you want to have thumbnails, configure liip loaders
+add a config file for your bundle
+
+```yaml
+# config/packages/pentatrion_upload.yaml
+# default configuration
+pentatrion_upload:
+  file_infos_helper: 'Pentatrion\UploadBundle\Service\FileInfosHelper'
+  origins:
+    public_uploads:
+      path: "%kernel.project_dir%/public/uploads"
+      liip_path: "/uploads"
+  liip_filters: ["small"]
+```
+
+If you have installed `liip/imagine-bundle`, configure at least the `small` filter for your thumbnails.
 
 ```yaml
 # config/packages/liip_imagine.yaml
@@ -484,19 +508,6 @@ import `assets/file-picker.js` and `assets/file-picker.scss` from `pentatrion/up
 ## Bundle Configuration
 
 configure your upload directories
-
-### default config
-
-```yaml
-# config/packages/pentatrion_upload.yaml
-pentatrion_upload:
-  file_infos_helper: 'Pentatrion\UploadBundle\Service\FileInfosHelper'
-  origins:
-    public_uploads:
-      path: "%kernel.project_dir%/public/uploads"
-      liip_path: "/uploads"
-  liip_filters: ["small"]
-```
 
 ### advanced configuration
 

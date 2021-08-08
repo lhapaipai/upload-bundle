@@ -5,6 +5,7 @@ use Imagine\Gd\Imagine;
 use Imagine\Image\Box;
 use Imagine\Image\Point;
 use Liip\ImagineBundle\Imagine\Cache\CacheManager;
+use Pentatrion\UploadBundle\Exception\InformativeException;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\File\File;
@@ -17,18 +18,13 @@ use Symfony\Contracts\Service\ServiceSubscriberInterface;
 
 class FileHelper implements ServiceSubscriberInterface
 {
-
-  private $validator;
   private $container;
   private $fileInfosHelper;
-  private $cacheManager;
 
-  public function __construct(CacheManager $cacheManager, FileInfosHelperInterface $fileInfosHelper, ContainerInterface $container, ValidatorInterface $validator) 
+  public function __construct(FileInfosHelperInterface $fileInfosHelper, ContainerInterface $container) 
   {
     $this->container = $container;
-    $this->validator = $validator;
     $this->fileInfosHelper = $fileInfosHelper;
-    $this->cacheManager = $cacheManager;
   }
 
   private function sanitizeFilenameFromFile(File $file, $dir, $options = [])
@@ -68,13 +64,17 @@ class FileHelper implements ServiceSubscriberInterface
   }
 
   // validation pour le file manager
-  public function validateFile(File $file = null, $directory = '') {
+  public function validateFile(File $file = null) {
 
     if (!$file instanceof File) {
       return ['Veuillez envoyer un fichier.'];
     }
 
-    $violations = $this->validator->validate(
+    if (!$this->container->has('validator')) {
+      return [];
+    }
+
+    $violations = $this->container->get('validator')->validate(
       $file,
       [
         new NotBlank(),
@@ -143,12 +143,18 @@ class FileHelper implements ServiceSubscriberInterface
     $fs = new Filesystem();
     $fs->remove($absolutePath);
 
-    $liipPath = $this->fileInfosHelper->getLiipPath($uploadRelativePath, $originName);
-    $this->container->get('cachemanager')->remove($liipPath);
+    if ($this->container->has('cachemanager')) {
+      $liipPath = $this->fileInfosHelper->getLiipPath($uploadRelativePath, $originName);
+      $this->container->get('cachemanager')->remove($liipPath);
+    }
   }
 
   public function cropImage(string $uploadRelativePath, $origin, $x, $y, $width, $height, $finalWidth, $finalHeight, $angle = 0)
   {
+    if (!class_exists("Imagine\Gd\Imagine")) {
+      throw new InformativeException('Unable to crop image. Did you install Imagine ? composer require imagine/imagine', 401);
+
+    }
     $absolutePath = $this->fileInfosHelper->getAbsolutePath($uploadRelativePath, $origin);
     $imagine = new Imagine();
     $image = $imagine->open($absolutePath);
@@ -165,16 +171,18 @@ class FileHelper implements ServiceSubscriberInterface
 
     $image->save($absolutePath);
 
-    $liipPath = $this->fileInfosHelper->getLiipPath($uploadRelativePath, $origin);
-    $this->container->get('cachemanager')->remove($liipPath);
-
+    if ($this->container->has('cachemanager')) {
+      $liipPath = $this->fileInfosHelper->getLiipPath($uploadRelativePath, $origin);
+      $this->container->get('cachemanager')->remove($liipPath);
+    }
     return true;
   }
 
   public static function getSubscribedServices()
   {
     return [
-      'cachemanager' => CacheManager::class,
+      'cachemanager' => '?'.CacheManager::class,
+      'validator' => '?'.ValidatorInterface::class
     ];
   }
 }

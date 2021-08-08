@@ -221,7 +221,7 @@ class UploadController extends AbstractController
         $destRelDir = $request->request->get('directory');
         $origin = $request->request->get('origin');
 
-        $violations = $fileHelper->validateFile($fileFromRequest, $destRelDir);
+        $violations = $fileHelper->validateFile($fileFromRequest);
         if (count($violations) > 0) {
             throw new InformativeException(implode('\n', $violations), 415);
         }

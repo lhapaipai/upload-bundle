@@ -31,9 +31,9 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
   public static function getSubscribedServices()
   {
     return [
-      'cache.manager' => CacheManager::class,
-      'data.manager'  => DataManager::class,
-      'filter.manager' => FilterManager::class,
+      'cache.manager' => '?'.CacheManager::class,
+      'data.manager'  => '?'.DataManager::class,
+      'filter.manager' => '?'.FilterManager::class,
       'router' => RouterInterface::class,
       'serializer' => '?'.SerializerInterface::class
     ];
@@ -84,6 +84,9 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
 
   /* à partir d'un webPath retrouve l'url de son miniature */
   public function getUrlThumbnail($id, $filter, $pregenerate = false, $withTimeStamp = true) {
+    if (!$this->container->has('cache.manager')) {
+      throw new \LogicException('You can not use the "getUrlThumbnail" method if the LiipImagineBundle is not available. Try running "composer require liip/imagine-bundle".');
+    }
     $cacheManager = $this->container->get('cache.manager');
 
     if (!$id || !$cacheManager) {
@@ -196,8 +199,7 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
       $infos['absolutePath'] = $absolutePath;
     }
 
-    if ($infos['type'] === 'file') {
-
+    if ($infos['type'] === 'file' && $this->container->has('cache.manager')) {
       if ($infos['mimeType'] === 'image/jpeg' || $infos['mimeType'] === 'image/png') {
         $infos['thumbnails'] = [];
         $liipPath = $this->getLiipPath($uploadRelativePath, $originName);
@@ -252,6 +254,9 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
 
   public function hydrateEntityWithUploadedFileData($entity, $uploadFields = [], $filters = [], $originName = "public_uploads") {
     if (!is_array($entity)) {
+      if (!$this->container->has("serializer")) {
+        throw new \LogicException('You can not use the "hydrateEntityWithUploadedFileData" method if the Serializer component is not available. Try running "composer require symfony/serializer".');
+      }
       $entity = $this->container->get("serializer")->normalize($entity, null);
     }
     foreach($uploadFields as $uploadField) {

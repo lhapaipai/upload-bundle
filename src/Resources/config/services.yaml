@@ -12,9 +12,9 @@ services:
 
   Pentatrion\UploadBundle\Service\FileInfosHelper: "@pentatrion_upload.file_infos_helper"
 
-  Pentatrion\UploadBundle\Service\FileManagerHelper:
-    arguments:
-      $router: "@router"
+  Pentatrion\UploadBundle\Service\FileManagerHelper: ~
+  #   arguments:
+  #     $router: "@router"
 
   Pentatrion\UploadBundle\Form\FilePickerType:
     arguments:
@@ -29,8 +29,6 @@ services:
     class: Pentatrion\UploadBundle\Service\FileHelper
     arguments:
       $container: '@Psr\Container\ContainerInterface'
-      $validator: '@Symfony\Component\Validator\Validator\ValidatorInterface'
-      $cacheManager: "@?liip_imagine.cache.manager"
       $fileInfosHelper: '@Pentatrion\UploadBundle\Service\FileInfosHelperInterface'
     tags: ["container.service_subscriber"]
 
