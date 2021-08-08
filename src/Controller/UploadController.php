@@ -14,9 +14,6 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\Routing\Annotation\Route;
 
-/**
- * @Route("/media-manager", defaults={"_format"="json"}, name="file_manager_endpoint_")
- */
 class UploadController extends AbstractController
 {
     private $fileInfosHelper;
@@ -36,9 +33,6 @@ class UploadController extends AbstractController
       }
     }
 
-    /**
-     * @Route("/get-files", name="media_get_files")
-     */
     public function getFiles(Request $request)
     {
         $directory = $request->request->get('directory');
@@ -52,9 +46,6 @@ class UploadController extends AbstractController
         ));
     }
 
-    /**
-     * @Route("/get-file-content/{mode}/{origin}/{uploadRelativePath}", name="media_show_file", defaults={"mode"="", "origin"="", "uploadRelativePath"=""}, requirements={"mode"="(show|download)", "uploadRelativePath"=".+"})
-     */
     public function showFile($mode, $origin, $uploadRelativePath, Request $request, FileInfosHelperInterface $fileInfosHelper)
     {
         $fileInfos = $fileInfosHelper->getInfos($uploadRelativePath, $origin, true);
@@ -74,9 +65,6 @@ class UploadController extends AbstractController
         return $response;
     }
 
-    /**
-     * @Route("/download-archive", name="media_download_archive")
-     */
     public function downloadFile(Request $request)
     {
         $fileIds = $request->request->get('files');
@@ -99,9 +87,6 @@ class UploadController extends AbstractController
         return $this->file($archiveTempPath, 'archive.zip');
     }
 
-    /**
-     * @Route("/edit", name="media_edit_file")
-     */
     public function editFileRequest(Request $request)
     {
         $infos = $request->request->all();
@@ -138,9 +123,6 @@ class UploadController extends AbstractController
         ]);
     }
 
-    /**
-     * @Route("/crop", name="media_crop_file")
-     */
     public function cropFile(Request $request, FileHelper $fileHelper)
     {
         $uploadRelativePath = $request->request->get('uploadRelativePath');
@@ -161,9 +143,6 @@ class UploadController extends AbstractController
         ]);
     }
 
-    /**
-     * @Route("/delete", name="media_delete_file")
-     */
     public function deleteFile(Request $request, FileHelper $fileHelper)
     {
         $fileIds = $request->request->get('files');
@@ -212,9 +191,6 @@ class UploadController extends AbstractController
         ]);
     }
 
-    /**
-     * @Route("/upload", name="media_upload_file", methods={"POST"})
-     */
     public function uploadFile(FileHelper $fileHelper, Request $request): Response
     {
         $fileFromRequest = $request->files->get('file');

@@ -1,0 +1,55 @@
+file_manager_endpoint_media_get_files:
+    path: /get-files
+    defaults:
+        _controller: Pentatrion\UploadBundle\Controller\UploadController::getFiles
+        _format: "json"
+
+file_manager_endpoint_media_show_file:
+    path: /get-file-content/{mode}/{origin}/{uploadRelativePath}
+    defaults:
+        mode: ""
+        origin: ""
+        uploadRelativePath: ""
+        _controller: Pentatrion\UploadBundle\Controller\UploadController::showFile
+        _format: "json"
+    requirements:
+        mode: "(show|download)"
+        uploadRelativePath: ".+"
+
+file_manager_endpoint_media_download_archive:
+    path: /download-archive
+    defaults:
+        _controller: Pentatrion\UploadBundle\Controller\UploadController::downloadFile
+        _format: "json"
+
+file_manager_endpoint_media_edit_file:
+    path: /edit
+    defaults:
+        _controller: Pentatrion\UploadBundle\Controller\UploadController::editFileRequest
+        _format: "json"
+
+file_manager_endpoint_media_crop_file:
+    path: /crop
+    defaults:
+        _controller: Pentatrion\UploadBundle\Controller\UploadController::cropFile
+        _format: "json"
+
+file_manager_endpoint_media_delete_file:
+    path: /delete
+    defaults:
+        _controller: Pentatrion\UploadBundle\Controller\UploadController::deleteFile
+        _format: "json"
+
+file_manager_endpoint_media_add_directory:
+    path: /add-directory
+    defaults:
+        _controller: Pentatrion\UploadBundle\Controller\UploadController::addDirectory
+        _format: "json"
+
+file_manager_endpoint_media_upload_file:
+    path: /upload
+    defaults:
+        _controller: Pentatrion\UploadBundle\Controller\UploadController::uploadFile
+        _format: "json"
+    methods:
+        - "POST"

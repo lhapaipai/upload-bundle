@@ -38,8 +38,8 @@ add upload routes to your Symfony app.
 
 # routes starting with /media-manager
 _pentatrion_upload:
-    resource: "@PentatrionUploadBundle/Controller/UploadController.php"
-    type: annotation
+    prefix: /media-manager
+    resource: "@PentatrionUploadBundle/Resources/config/routing.yaml"
 ```
 
 add a config file for your bundle
