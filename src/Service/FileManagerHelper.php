@@ -48,8 +48,7 @@ class FileManagerHelper {
 
     return array_merge([
       'endPoint' => "/media-manager",
-      'isAdmin' => true,
-      'fileValidation' => [],
+      'fileValidation' => null,
       'entryPoints' => $completeEntryPoints
     ], $baseConfig);
   }
