@@ -11,7 +11,7 @@ This Symfony bundle provides :
 - Twig functions for your uploaded files
 - FilePickerType for your forms
 
-## installation
+## Installation
 
 ```console
 composer require pentatrion/upload-bundle
@@ -31,18 +31,37 @@ Other dependencies
 
 - symfony/security-bundle : only required with FilePickerType
 
-add upload routes to your Symfony app.
+If you have installed `liip/imagine-bundle`, configure at least the `small` filter for your thumbnails.
 
 ```yaml
-# config/routes/pentatrion_upload.yaml
-
-# routes starting with /media-manager
-_pentatrion_upload:
-  prefix: /media-manager
-  resource: "@PentatrionUploadBundle/Resources/config/routing.yaml"
+# config/packages/pentatrion_upload.yaml
+# default configuration
+pentatrion_upload:
+  liip_filters: ["small"]
 ```
 
-add a config file for your bundle
+```yaml
+# config/packages/liip_imagine.yaml
+liip_imagine:
+  driver: "gd"
+
+  # define filters defined in pentatrion_upload.liip_filters
+  filter_sets:
+    small:
+      filters:
+        thumbnail: { size: [250, 250], mode: inset, allow_upscale: true }
+```
+
+Create directories with Apache user access in upload path and liipImagineBundle cache path (`public/uploads`, `public/media`)
+
+```console
+mkdir public/{uploads,media}
+chmod 777 public/{uploads,media}
+```
+
+## Additional configuration for MiniFileManager
+
+If you use this bundle with MiniFileManager and liipImagineBundle, you need to add additional filters.
 
 ```yaml
 # config/packages/pentatrion_upload.yaml
@@ -51,12 +70,18 @@ pentatrion_upload:
   file_infos_helper: 'Pentatrion\UploadBundle\Service\FileInfosHelper'
   origins:
     public_uploads:
+      # if directory is inside %kernel.project_dir%/public, files
+      # will be directly accessible.
       path: "%kernel.project_dir%/public/uploads"
+      # prefix to add in order to be found by a liip_imagine loader
       liip_path: "/uploads"
-  liip_filters: ["small"]
-```
 
-If you have installed `liip/imagine-bundle`, configure at least the `small` filter for your thumbnails.
+    # # if you want private upload directory
+    # private_uploads:
+    #   path: "%kernel.project_dir%/var/uploads"
+    #   liip_path: ""
+  liip_filters: ["small", "large"]
+```
 
 ```yaml
 # config/packages/liip_imagine.yaml
@@ -70,9 +95,9 @@ liip_imagine:
       filters:
         thumbnail: { size: [250, 250], mode: inset, allow_upscale: true }
 
-    # large:
-    #   filters:
-    #     thumbnail: { size: [1500, 1500], mode: inset, allow_upscale: false }
+    large:
+      filters:
+        thumbnail: { size: [1500, 1500], mode: inset, allow_upscale: false }
 
   loaders:
     default:
@@ -85,12 +110,7 @@ liip_imagine:
           # - "%kernel.project_dir%/var/uploads"
 ```
 
-Create directories with Apache user access in upload path and liipImagineBundle cache path (`public/uploads`, `public/media`)
-
-```console
-mkdir public/{uploads,media}
-chmod 777 public/{uploads,media}
-```
+If you want to see examples of utilisation with mini file manager, scroll down to [utilisation with mini file manager](#with-mini-file-manager-js-library).
 
 ## Utilisation
 
@@ -563,4 +583,61 @@ services:
       $liipFilters: "%pentatrion_upload.liip_filters%"
       $defaultOriginName: "%pentatrion_upload.default_origin%"
       $uploadOrigins: "%pentatrion_upload.origins%"
+```
+
+## Manual installation
+
+```console
+composer require pentatrion/vite-bundle
+```
+
+if you do not want to use the recipe or want to see in depth what is modified by it.
+
+add upload routes to your Symfony app.
+
+```yaml
+# config/routes/pentatrion_upload.yaml
+
+# routes starting with /media-manager
+_pentatrion_upload:
+  prefix: /media-manager
+  resource: "@PentatrionUploadBundle/Resources/config/routing.yaml"
+```
+
+add a config file for your bundle
+
+```yaml
+# config/packages/pentatrion_upload.yaml
+# default configuration
+pentatrion_upload:
+  file_infos_helper: 'Pentatrion\UploadBundle\Service\FileInfosHelper'
+  origins:
+    public_uploads:
+      path: "%kernel.project_dir%/public/uploads"
+      liip_path: "/uploads"
+
+  # update to ["small"] if you have installed liip/imagine-bundle
+  liip_filters: []
+```
+
+if you have installed liip/imagine-bundle add the small filter.
+
+```yaml
+# config/packages/liip_imagine.yaml
+liip_imagine:
+  driver: "gd"
+
+  # define filters defined in pentatrion_upload.liip_filters
+  # (at least small filter)
+  filter_sets:
+    small:
+      filters:
+        thumbnail: { size: [250, 250], mode: inset, allow_upscale: true }
+
+  loaders:
+    default:
+      filesystem:
+        data_root:
+          # must be linked with pentatrion_upload -> origin.[origin-name].liip_path
+          - "%kernel.project_dir%/public"
 ```
