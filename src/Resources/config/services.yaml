@@ -20,6 +20,7 @@ services:
     arguments:
       $fileManagerHelper: '@Pentatrion\UploadBundle\Service\FileManagerHelper'
       $fileInfosHelper: '@Pentatrion\UploadBundle\Service\FileInfosHelperInterface'
+      $requestStack: '@request_stack'
     tags: ["form.type"]
 
   # c'est ce service qui peut être surchargé

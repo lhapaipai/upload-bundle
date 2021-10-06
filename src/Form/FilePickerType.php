@@ -9,6 +9,7 @@ use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormView;
 use Symfony\Component\Form\FormInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Mime\MimeTypes;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -16,10 +17,12 @@ class FilePickerType extends AbstractType
 {
   private $fileManagerHelper;
   private $fileInfosHelper;
+  private $locale;
 
-  public function __construct(FileManagerHelper $fileManagerHelper, FileInfosHelperInterface $fileInfosHelper) {
+  public function __construct(FileManagerHelper $fileManagerHelper, FileInfosHelperInterface $fileInfosHelper, RequestStack $requestStack) {
     $this->fileManagerHelper = $fileManagerHelper;
     $this->fileInfosHelper = $fileInfosHelper;
+    $this->locale = $requestStack->getCurrentRequest()->getLocale();
   }
 
   public function buildView(FormView $view, FormInterface $form, array $options)
@@ -34,6 +37,7 @@ class FilePickerType extends AbstractType
           'origin'=> $options['uploadOrigin'],
         ]],
         'fileValidation' => $options['fileValidation'],
+        'locale' => $options['locale'],
         'originalSelection' => $value ? [$value] : null
       ])
     );
@@ -74,7 +78,8 @@ class FilePickerType extends AbstractType
       'previewFilter' => 'small',
       'previewType' => 'file',
       'previewClass' => '',
-      'fileValidation' => null
+      'fileValidation' => null,
+      'locale' => $this->locale
     ]);
   }
 
