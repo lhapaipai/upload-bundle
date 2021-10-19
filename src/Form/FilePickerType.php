@@ -42,7 +42,9 @@ class FilePickerType extends AbstractType
     );
 
     $formFilePickerConfig = [
-      'multiple' => $options['multiple']
+      'multiple'      => $options['multiple'],
+      'previewFilter' => $options['previewFilter'],
+      'previewType'   => $options['previewType']
     ];
 
     $selection = [];
@@ -66,7 +68,7 @@ class FilePickerType extends AbstractType
     $resolver->setDefaults([
       'uploadDirectoryLabel' => 'Répertoire principal',
       'previewFilter' => 'small',
-      'previewType' => 'file',
+      'previewType' => 'image',
       'previewClass' => '',
       'fileValidation' => null,
       'locale' => $this->locale,

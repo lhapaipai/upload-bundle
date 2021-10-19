@@ -448,19 +448,24 @@ class AdminUserFormType extends AbstractType
                 // must be any key defined in
                 // config/packages/pentatrion_upload.yaml -> liip_filters
                 'previewFilter' => 'small',
-                'previewClass' => 'rounded-corner',
-
-                // file or image
+                // file or image with file you have only icon
+                // with image you have thumbnail if file size is under 10Mo.
                 'previewType' => 'image',
 
+                // if you wants to force crop/resize your image(s)
                 'fileValidation' => [
+                    // if you wants to force selection to only one mime Type :
                     'mimeGroup' => 'image',
                     'imageOptions' => [
                         'ratio' => 1,
                         'minWidth' => 300,
                         //...
                     ]
-                ]
+                ],
+
+                // allow multiple file selection, the relative path will be
+                // comma separated 
+                'multiple' => true
             ])
         ;
     }
@@ -480,55 +485,26 @@ twig:
 
 ```twig
 {# templates/_form_theme.html.twig #}
-
 {% use "form_div_layout.html.twig" %}
 
-{%- block form_row -%}
-    {%- set widget_attr = {} -%}
-    {%- if help is not empty -%}
-        {%- set widget_attr = {attr: {'aria-describedby': id ~"_help"}} -%}
-    {%- endif -%}
-    <div{% with {attr: row_attr|merge({class: (row_attr.class|default('') ~ ' form-group')|trim})} %}{{ block('attributes') }}{% endwith %}>
-        {{- form_label(form) -}}
-        {{- form_widget(form, widget_attr) -}}
-        {{- form_errors(form) -}}
-        {{- form_help(form) -}}
-    </div>
-{%- endblock form_row -%}
-
 {%- block file_picker_widget -%}
+    {%- set attr = attr|merge({
+        class: (attr.class|default('') ~ ' file-picker')|trim,
+        'data-selection': selection,
+        'data-filemanager': filemanager_config,
+        'data-formfilepicker': formfilepicker_config
+    }) -%}
     {{- block('form_widget_simple') -}}
-    {% if preview.type == 'image' %}
-        <div class="preview image">
-            <img data-type="image" class="{{ preview.class }}" src="{{ uploaded_image_filtered(preview.path, preview.filter, preview.origin) }}" data-filter="{{ preview.filter }}" alt="">
-            <div class="filename">{{ preview.filename }}</div>
-            <div class="actions">
-                <a href="#" class="remove"><i class="fa-trash"></i></a>
-                <a href="#" class="browse" data-target="{{ id }}" data-filemanager="{{ picker_config | e('html_attr') }}"><i class="fa-folder"></i></a>
-            </div>
-        </div>
-    {% else %}
-        <div class="preview file">
-            <img data-type="file" src="{{ preview.path }}" alt="">
-            <div class="filename">{{ preview.filename }}</div>
-            <div class="actions">
-                <a href="#" class="remove"><i class="fa-trash"></i></a>
-                <a href="#" class="browse" data-target="{{ id }}" data-filemanager="{{ picker_config | e('html_attr') }}"><i class="fa-folder"></i></a>
-            </div>
-        </div>
-    {% endif %}
-    <button class="btn outlined browse" data-target="{{ id }}" data-filemanager="{{ picker_config | e('html_attr') }}">Parcourir</button>
-
 {%- endblock -%}
 ```
 
-import `assets/file-picker.js` and `assets/file-picker.scss` from `pentatrion/upload-bundle` in your js.
+import `assets/form-file-picker.js` from `pentatrion/upload-bundle` in your js.
 
-## Bundle Configuration
+## Advanced Bundle Configuration
 
 configure your upload directories
 
-### advanced configuration
+### package configuration
 
 ```yaml
 # config/packages/pentatrion_upload.yaml
