@@ -213,4 +213,74 @@ class UploadController extends AbstractController
         ]);
     }
 
+    public function chunkFile(FileHelper $fileHelper, Request $request): Response
+    {
+        $fs = new Filesystem();
+
+        $destRelDir = $request->query->get('directory');
+        $origin = $request->query->get('origin');
+        $tempId = $request->query->get('id');
+
+        $uid = $request->query->get('resumableIdentifier');
+        $tempDir = sys_get_temp_dir().DIRECTORY_SEPARATOR.$uid;
+
+        $filename = $request->query->get('resumableFilename');
+        $totalSize = $request->query->getInt('resumableTotalSize');
+        $totalChunks = $request->query->getInt('resumableTotalChunks');
+
+        $chunkFilename = 'chunk.part'.$request->query->getInt('resumableChunkNumber');
+
+        // on teste simplement si la portion de fichier a déjà été uploadée.
+        if($request->getMethod() === 'GET') {
+            $chunkPath = $tempDir.DIRECTORY_SEPARATOR.$chunkFilename;
+
+            // le fichier n'existe pas on signale qu'il faudra donc l'uploader.
+            if (!$fs->exists($chunkPath)) {
+                return new Response('', 204);
+            }
+            // le fichier existe, on vérifiera comme lors d'un upload si on ne peut pas
+            // déjà assembler le fichier
+            
+        } else {
+            // on upload la portion de fichier.
+            $fileFromRequest = $request->files->get('file');
+            try {
+                // if (rand(0,3) === 3) {
+                //     throw new \Exception("random error");
+                // }
+                $fileHelper->uploadChunkFile($fileFromRequest, $tempDir, $chunkFilename);
+            } catch (\Exception $err) {
+                throw new InformativeException("Impossible de copier le fragment", 500);
+            }
+        }
+
+        try {
+            $fileInfos = $fileHelper->createFileFromChunks($tempDir, $filename, $totalSize, $totalChunks, $destRelDir, $origin);
+        } catch (\Exception $err) {
+            if ($err instanceof InformativeException) {
+                throw $err;
+            } else {
+                throw new InformativeException("Impossible d'assembler les fragments en fichier", 500);
+            }
+        }
+
+        if ($fileInfos) {
+            return $this->json([
+                'file' => $fileInfos,
+                'oldId' => $tempId
+            ]);
+        } else {
+            return $this->json([
+                'message' => $request->getMethod() === 'GET' ? 'chunk already exist' : 'chunk uploaded'
+            ]);
+        }
+
+
+
+
+        return $this->json([
+            'data' => $fileInfos
+        ]);
+    }
+
 }

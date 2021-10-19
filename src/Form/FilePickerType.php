@@ -29,7 +29,7 @@ class FilePickerType extends AbstractType
   {
     $value = $form->getData();
 
-    $fileManagerConfig = json_encode(
+    $fileManagerConfig = (
       $this->fileManagerHelper->completeConfig([
         'entryPoints' => [[
           'directory' => $options['uploadDirectory'],
@@ -38,35 +38,25 @@ class FilePickerType extends AbstractType
         ]],
         'fileValidation' => $options['fileValidation'],
         'locale' => $options['locale'],
-        'originalSelection' => $value ? [$value] : null
       ])
     );
 
-    $view->vars['row_attr']['class'] = 'file-picker'.($value?' with-value':'');
-    $view->vars['type'] = 'hidden';
-    $view->vars['picker_config'] = $fileManagerConfig;
+    $formFilePickerConfig = [
+      'multiple' => $options['multiple']
+    ];
 
-    if ($options['previewType'] === 'image') {
-      $view->vars['preview'] = [
-        'class' => $options['previewClass'],
-        'type' => $options['previewType'],
-        'path' => $value ?? '',
-        'filter' => $options['previewFilter'],
-        'origin'=> $options['uploadOrigin'],
-        'filename' => basename($value)
-      ];
-    } else {
-      $absPath = $this->fileInfosHelper->getAbsolutePath($value, $options['uploadOrigin']);
-      $mimeType = MimeTypes::getDefault()->guessMimeType($absPath);
-      $icon = '/file-manager/icons/'.FileInfosHelper::getIconByMimeType($mimeType);
-
-      $view->vars['preview'] = [
-        'class' => $options['previewClass'],
-        'type' => $options['previewType'],
-        'path' => $icon,
-        'filename' => basename($value)
-      ];
+    $selection = [];
+    if (!empty($value)) {
+      $values = explode(",", $value);
+      foreach($values as $fileRelativePath) {
+        $selection[] = $this->fileInfosHelper->getInfos($fileRelativePath, $options['uploadOrigin']);
+      }
     }
+
+    $view->vars['type'] = 'hidden';
+    $view->vars['filemanager_config'] = json_encode($fileManagerConfig);
+    $view->vars['formfilepicker_config'] = json_encode($formFilePickerConfig);
+    $view->vars['selection'] = json_encode($selection);
   }
 
   public function configureOptions(OptionsResolver $resolver)
@@ -79,7 +69,8 @@ class FilePickerType extends AbstractType
       'previewType' => 'file',
       'previewClass' => '',
       'fileValidation' => null,
-      'locale' => $this->locale
+      'locale' => $this->locale,
+      'multiple' => false
     ]);
   }
 

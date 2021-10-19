@@ -53,3 +53,18 @@ file_manager_endpoint_media_upload_file:
         _format: "json"
     methods:
         - "POST"
+
+file_manager_endpoint_media_chunk_file:
+    path: /chunk
+    defaults:
+        _controller: Pentatrion\UploadBundle\Controller\UploadController::chunkFile
+        _format: "json"
+    methods:
+        - "POST"
+        - "GET"
+
+# file_manager_endpoint_media_test_chunk_file:
+#     path: /test-chunk
+#     defaults:
+#         _controller: Pentatrion\UploadBundle\Controller\UploadController::testChunkFile
+#         _format: "json"

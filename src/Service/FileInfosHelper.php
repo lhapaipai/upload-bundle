@@ -83,13 +83,13 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
   }
 
   /* à partir d'un webPath retrouve l'url de son miniature */
-  public function getUrlThumbnail($id, $filter, $pregenerate = false, $withTimeStamp = true) {
+  public function getUrlThumbnail($liipPath, $filter, $pregenerate = false, $withTimeStamp = true) {
     if (!$this->container->has('cache.manager')) {
       throw new \LogicException('You can not use the "getUrlThumbnail" method if the LiipImagineBundle is not available. Try running "composer require liip/imagine-bundle".');
     }
     $cacheManager = $this->container->get('cache.manager');
 
-    if (!$id || !$cacheManager) {
+    if (!$liipPath || !$cacheManager) {
       return;
     }
 
@@ -106,17 +106,17 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
       $filterManager = $this->container->get('filter.manager');
       $dataManager = $this->container->get('data.manager');
 
-      if (!$cacheManager->isStored($id, $filter)) {
-        $binary = $dataManager->find($filter, $id);
+      if (!$cacheManager->isStored($liipPath, $filter)) {
+        $binary = $dataManager->find($filter, $liipPath);
         $cacheManager->store(
           $filterManager->applyFilter($binary, $filter),
-          $id,
+          $liipPath,
           $filter
         );
       }
-      return $cacheManager->resolve($id, $filter);
+      return $cacheManager->resolve($liipPath, $filter);
     } else {
-      return $cacheManager->getBrowserPath($id,$filter,[],null,UrlGeneratorInterface::ABSOLUTE_URL).$suffix;
+      return $cacheManager->getBrowserPath($liipPath,$filter,[],null,UrlGeneratorInterface::ABSOLUTE_URL).$suffix;
     }
   }
 
@@ -199,7 +199,8 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
       $infos['absolutePath'] = $absolutePath;
     }
 
-    if ($infos['type'] === 'file' && $this->container->has('cache.manager')) {
+    // on ne calcule des miniatures que si l'image est en dessous les 10Mo.
+    if ($infos['type'] === 'file' && $infos['size'] < 1024*1024*10 && $this->container->has('cache.manager')) {
       if ($infos['mimeType'] === 'image/jpeg' || $infos['mimeType'] === 'image/png') {
         $infos['thumbnails'] = [];
         $liipPath = $this->getLiipPath($uploadRelativePath, $originName);

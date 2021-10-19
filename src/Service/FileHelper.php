@@ -27,19 +27,15 @@ class FileHelper implements ServiceSubscriberInterface
     $this->fileInfosHelper = $fileInfosHelper;
   }
 
-  private function sanitizeFilenameFromFile(File $file, $dir, $options = [])
+  public function sanitizeFilename($filename, $dir, $options = [])
   {
-    if ($file instanceof UploadedFile) {
-      $filename = $file->getClientOriginalName();
-    } else {
-      $filename = $file->getFilename();
-    }
+
     if (isset($options['prefix'])) {
       $filename = $options['prefix'].$filename;
     }
 
-    if (isset($options['guessExtension']) && $options['guessExtension']) {
-      $extension = $file->guessExtension();
+    if (isset($options['extension']) && $options['extension']) {
+      $extension = $options['extension'];
     } else {
       $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
     }
@@ -52,9 +48,9 @@ class FileHelper implements ServiceSubscriberInterface
     if (isset($options['unique']) && $options['unique']) {
       $filenameWithoutExtension = $filenameWithoutExtension.'-'.uniqid();
     } else {
-      if (file_exists($dir.'/'.$filenameWithoutExtension.'.'.$extension)) {
+      if (file_exists($dir.DIRECTORY_SEPARATOR.$filenameWithoutExtension.'.'.$extension)) {
         $counter = 1;
-        while (file_exists($dir.'/'.$filenameWithoutExtension.'-'.$counter.'.'.$extension)) {
+        while (file_exists($dir.DIRECTORY_SEPARATOR.$filenameWithoutExtension.'-'.$counter.'.'.$extension)) {
           $counter++;
         }
         $filenameWithoutExtension = $filenameWithoutExtension.'-'.$counter;
@@ -79,7 +75,7 @@ class FileHelper implements ServiceSubscriberInterface
       [
         new NotBlank(),
         new FileConstraint([
-            'maxSize' => '10M',
+            'maxSize' => '500M',
             'maxSizeMessage' => 'Votre fichier est trop grand ({{ size }} {{ suffix }}). limite : {{ limit }} {{ suffix }}.',
             'mimeTypes' => [
                 'text/*',
@@ -125,7 +121,16 @@ class FileHelper implements ServiceSubscriberInterface
     if (isset($options['forceFilename'])) {
       $newFilename = $options['forceFilename'].'.'.$file->guessExtension();
     } else {
-      $newFilename = $this->sanitizeFilenameFromFile($file, $destAbsDir, [...$options, 'urlize' => true]);
+      if (isset($options['guessExtension']) && $options['guessExtension']) {
+        $extension = $file->guessExtension();
+        $options['extension'] = $extension; 
+      }
+      if ($file instanceof UploadedFile) {
+        $filename = $file->getClientOriginalName();
+      } else {
+        $filename = $file->getFilename();
+      }
+      $newFilename = $this->sanitizeFilename($filename, $destAbsDir, [...$options, 'urlize' => true]);
     }
     
     $fs = new Filesystem();
@@ -133,7 +138,69 @@ class FileHelper implements ServiceSubscriberInterface
       $fs->mkdir($destAbsDir);
     }
     $file->move($destAbsDir, $newFilename);
-    return $this->fileInfosHelper->getInfos($destRelDir.'/'.$newFilename, $originName);
+    return $this->fileInfosHelper->getInfos($destRelDir.DIRECTORY_SEPARATOR.$newFilename, $originName);
+  }
+
+  public function createFileFromChunks($tempDir, $filename, $totalSize, $totalChunks, $destRelDir, $originName = null, $options = [])
+  {
+    $fs = new Filesystem();
+    $totalFilesOnServerSize = 0;
+    $files = array_diff(scandir($tempDir), array('..', '.', 'output', 'done'));
+    
+    $destAbsDir = $this->fileInfosHelper->getAbsolutePath($destRelDir, $originName);
+    $newFilename = $this->sanitizeFilename($filename, $destAbsDir, [...$options, 'urlize' => true]);
+
+    // si on reprend un upload au milieu des test on parviendra à générer le fichier, il faut donc que
+    // les tests suivants renvoient tout de suite les bonnes infos.
+    if ($fs->exists($destAbsDir.DIRECTORY_SEPARATOR.$newFilename)) {
+      return $this->fileInfosHelper->getInfos($destRelDir.DIRECTORY_SEPARATOR.$newFilename, $originName);
+    }
+
+    foreach($files as $file) {
+        $tempFileSize = \filesize($tempDir.DIRECTORY_SEPARATOR.$file);
+        $totalFilesOnServerSize += $tempFileSize;
+    }
+
+    if ($totalFilesOnServerSize >= $totalSize) {
+      
+      if (($fp = \fopen($tempDir.DIRECTORY_SEPARATOR.'output', 'w')) !== false) {
+        for ($i = 1; $i <= $totalChunks; $i++) {
+          \fwrite($fp, \file_get_contents($tempDir.DIRECTORY_SEPARATOR.'chunk.part'.$i));
+        }
+        fclose($fp);
+      }
+
+      if (!$fs->exists($destAbsDir)) {
+        $fs->mkdir($destAbsDir);
+      }
+
+      $file = new File($tempDir.DIRECTORY_SEPARATOR.'output');
+
+      $violations = $this->validateFile($file);
+      if (count($violations) > 0) {
+          throw new InformativeException(implode('\n', $violations), 415);
+      }
+
+      $file->move($destAbsDir, $newFilename);
+
+      // permet de supprimer récursivement sans problème avec les chunks concurrents
+      $fs->rename($tempDir, $tempDir."_done");
+      $fs->remove($tempDir."_done");
+
+      return $this->fileInfosHelper->getInfos($destRelDir.DIRECTORY_SEPARATOR.$newFilename, $originName);
+    } else {
+      return false;
+    }
+
+  }
+
+  public function uploadChunkFile(File $file, $destDir, $filename)
+  {
+    $fs = new Filesystem();
+    if (!$fs->exists($destDir)) {
+      $fs->mkdir($destDir);
+    }
+    return $file->move($destDir, $filename);
   }
 
   public function delete(string $uploadRelativePath, $originName)
