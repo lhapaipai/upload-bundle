@@ -441,32 +441,34 @@ class AdminUserFormType extends AbstractType
     {
         $builder
             ->add('avatar', FilePickerType::class, [
-                'required' => false,
-                'uploadDirectory' => 'profile',
-                'uploadOrigin' => 'public_uploads',
-
-                // must be any key defined in
-                // config/packages/pentatrion_upload.yaml -> liip_filters
-                'previewFilter' => 'small',
-                // file or image with file you have only icon
-                // with image you have thumbnail if file size is under 10Mo.
-                'previewType' => 'image',
-
-                // if you wants to force crop/resize your image(s)
-                'fileValidation' => [
-                    // if you wants to force selection to only one mime Type :
-                    'mimeGroup' => 'image',
-                    'imageOptions' => [
-                        'ratio' => 1,
-                        'minWidth' => 300,
-                        //...
-                    ]
+              'fileManagerConfig' => [
+                'entryPoints' => [
+                  [
+                    'label' => 'Uploads',
+                    'directory' => '',
+                    'origin' => 'public_uploads',
+                    'readOnly' => false,
+                    'icon' => 'fa-lock'
+                  ]
                 ],
-
-                // allow multiple file selection, the relative path will be
-                // comma separated 
-                'multiple' => true
-            ])
+                'fileValidation' => null,
+                'fileUpload' => [
+                  'maxFileSize' => 10 * 1024 * 1024,
+                  'fileType' => [
+                    "text/*",
+                    "image/*", // image/vnd.adobe.photoshop  image/x-xcf
+                    "video/*",
+                    "audio/*"
+                  ]
+                ],
+                'locale' => 'fr',
+              ],
+              'formFilePickerConfig' => [
+                'multiple'      => false,
+                'previewFilter' => 'small',
+                'previewType'   => 'image'
+              ]
+            )
         ;
     }
 }

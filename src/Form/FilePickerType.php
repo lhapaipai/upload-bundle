@@ -30,29 +30,28 @@ class FilePickerType extends AbstractType
     $value = $form->getData();
 
     $fileManagerConfig = (
-      $this->fileManagerHelper->completeConfig([
-        'entryPoints' => [[
-          'directory' => $options['uploadDirectory'],
-          'label' => $options['uploadDirectoryLabel'],
-          'origin'=> $options['uploadOrigin'],
-        ]],
-        'fileValidation' => $options['fileValidation'],
-        'locale' => $options['locale'],
-      ])
+      $this->fileManagerHelper->completeConfig($options['fileManagerConfig'], $this->locale)
     );
 
-    $formFilePickerConfig = [
-      'multiple'      => $options['multiple'],
-      'previewFilter' => $options['previewFilter'],
-      'previewType'   => $options['previewType']
-    ];
+    $formFilePickerConfig = array_merge([
+      'multiple'      => false,
+      'previewFilter' => 'small',
+      'previewType'   => 'image'
+    ], $options['formFilePickerConfig']);
 
     $selection = [];
     if (!empty($value)) {
       $values = explode(",", $value);
       foreach($values as $fileRelativePath) {
-        $selection[] = $this->fileInfosHelper->getInfos($fileRelativePath, $options['uploadOrigin']);
+        $selection[] = $this->fileInfosHelper->getInfos(
+          $fileRelativePath,
+          $fileManagerConfig['entryPoints'][0]['origin']
+        );
       }
+    }
+
+    if ($formFilePickerConfig['multiple']) {
+      $fileManagerConfig['multiSelection'] = true;
     }
 
     $view->vars['type'] = 'hidden';
@@ -63,16 +62,35 @@ class FilePickerType extends AbstractType
 
   public function configureOptions(OptionsResolver $resolver)
   {
-    $resolver->setDefined('uploadDirectory');
-    $resolver->setDefined('uploadOrigin');
+    $resolver->setDefined('fileManagerConfig');
+    $resolver->setDefined('formFilePickerConfig');
     $resolver->setDefaults([
-      'uploadDirectoryLabel' => 'Répertoire principal',
-      'previewFilter' => 'small',
-      'previewType' => 'image',
-      'previewClass' => '',
-      'fileValidation' => null,
-      'locale' => $this->locale,
-      'multiple' => false
+      'formFilePickerConfig' => []
+    ]);
+    $resolver->setDefaults([
+      'fileManagerConfig' => [
+        'entryPoints' => [
+          [
+            'label' => 'Uploads',
+            'directory' => '',
+            'origin' => 'public_uploads',
+            'readOnly' => false,
+            'icon' => 'fa-lock'
+          ]
+        ],
+        'fileValidation' => null,
+        'fileUpload' => [
+          'maxFileSize' => 10 * 1024 * 1024,
+          'fileType' => [
+            "text/*",
+            "image/*", // image/vnd.adobe.photoshop  image/x-xcf
+            "video/*",
+            "audio/*"
+          ]
+        ],
+        'locale' => 'fr',
+      ],
+      
     ]);
   }
 
