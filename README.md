@@ -59,58 +59,7 @@ mkdir public/{uploads,media}
 chmod 777 public/{uploads,media}
 ```
 
-## Additional configuration for MiniFileManager
 
-If you use this bundle with MiniFileManager and liipImagineBundle, you need to add additional filters.
-
-```yaml
-# config/packages/pentatrion_upload.yaml
-# default configuration
-pentatrion_upload:
-  file_infos_helper: 'Pentatrion\UploadBundle\Service\FileInfosHelper'
-  origins:
-    public_uploads:
-      # if directory is inside %kernel.project_dir%/public, files
-      # will be directly accessible.
-      path: "%kernel.project_dir%/public/uploads"
-      # prefix to add in order to be found by a liip_imagine loader
-      liip_path: "/uploads"
-
-    # # if you want private upload directory
-    # private_uploads:
-    #   path: "%kernel.project_dir%/var/uploads"
-    #   liip_path: ""
-  liip_filters: ["small", "large"]
-```
-
-```yaml
-# config/packages/liip_imagine.yaml
-liip_imagine:
-  driver: "gd"
-
-  # define filters defined in pentatrion_upload.liip_filters
-  # (at least small filter)
-  filter_sets:
-    small:
-      filters:
-        thumbnail: { size: [250, 250], mode: inset, allow_upscale: true }
-
-    large:
-      filters:
-        thumbnail: { size: [1500, 1500], mode: inset, allow_upscale: false }
-
-  loaders:
-    default:
-      filesystem:
-        data_root:
-          # must be linked with pentatrion_upload -> origin.[origin-name].liip_path
-          - "%kernel.project_dir%/public"
-
-          # if you want private upload directory
-          # - "%kernel.project_dir%/var/uploads"
-```
-
-If you want to see examples of utilisation with mini file manager, scroll down to [utilisation with mini file manager](#with-mini-file-manager-js-library).
 
 ## Utilisation
 
@@ -174,6 +123,12 @@ class PostController extends AbstractController
 ```php
 $file // file from $_FILES
 $directory = 'relative/path'; // path to add into public_uploads.
+
+// configured in config/packages/pentatrion_upload.yaml
+// pentatrion_upload.origins.<origin>
+// default value public_uplads -> "%kernel.project_dir%/public/uploads"
+$originName = 'public_uploads';
+
 $options = [
   'forceFilename' => 'beach.jpg',
   'prefix' => null,           // prefix your file name 'img-'
@@ -183,12 +138,6 @@ $options = [
   'unique' => true,           // suffixe your file with hash
                               // beach-[hash].jpg
 ];
-
-// configured in config/packages/pentatrion_upload.yaml
-// pentatrion_upload.origins.<origin>
-
-// default value public_uplads -> "%kernel.project_dir%/public/uploads"
-$originName = 'public_uploads';
 
 $fileInfos = $fileHelper->uploadFile($file, $directory, $originName, $options);
 
@@ -318,11 +267,44 @@ after hydration
 
 this bundle has been designed to integrate perfectly with [Mini File Manager](https://github.com/lhapaipai/mini-file-manager).
 
+He offers `/media-manager` endpoint for the backend integration.
+
 ```console
 npm i mini-file-manager
 ```
 
-### File Manager / File Picker
+### without helpers
+
+```twig
+<head>
+  <link rel="stylesheet" href="/dist/style.css" />
+  <script src="/dist/mini-file-manager.umd.js"></script>
+</head>
+<body>
+  <div id="file-manager"></div>
+
+  <script>
+    let config = {
+      "endPoint": "/media-manager",
+      "isAdmin": true,
+      "fileValidation": [],
+      "entryPoints": [
+        {
+          "directory": "",
+          "origin": "public_uploads",
+          "readOnly": false,
+          "icon": "fa-lock",
+          "label": "Uploads"
+        }
+      ]
+    };
+
+    new miniFileManager.createFileManager("#file-manager", config);
+  </script>
+</body>
+```
+
+### with helpers
 
 ```php
 use Pentatrion\UploadBundle\Service\FileManagerHelper;
@@ -363,7 +345,7 @@ the mini-file-manager config is placed in data-props attribute.
   <div id="file-manager" data-props="{{ fileManagerConfig | json_encode | e('html_attr') }}"></div>
 
   <script>
-    miniFileManager.createFileManager("#file-manager");
+    new miniFileManager.FileManager("#file-manager");
   </script>
 </body>
 ```
@@ -383,52 +365,19 @@ Twig template for the file picker.
     let findBtn = document.getElementById("find-file");
     findBtn.addEventListener("click", () => {
       let options = JSON.parse(findBtn.dataset.props);
-      miniFileManager.openFileManager(
+      new miniFileManager.FileManagerModal(
         options,
-        (files) => {
-          console.log("onSuccess", files);
-        },
-        () => {
-          console.log("onAbort");
-        }
+        (files) => { console.log("onSuccess", files); },
+        () => { console.log("onAbort"); }
       );
     });
   </script>
 </body>
 ```
 
-#### without helpers
-
-```twig
-<head>
-  <link rel="stylesheet" href="/dist/style.css" />
-  <script src="/dist/mini-file-manager.umd.js"></script>
-</head>
-<body>
-  <div id="file-manager"></div>
-
-  <script>
-    let config = {
-      "endPoint": "/media-manager",
-      "isAdmin": true,
-      "fileValidation": [],
-      "entryPoints": [
-        {
-          "directory": "",
-          "origin": "public_uploads",
-          "readOnly": false,
-          "icon": "fa-lock",
-          "label": "Uploads"
-        }
-      ]
-    };
-
-    miniFileManager.createFileManager("#file-manager", config);
-  </script>
-</body>
-```
-
 If you want more details about configuration, check [Mini File Manager](https://github.com/lhapaipai/mini-file-manager).
+
+If you want exemple, check [Mini File Manager Template](https://github.com/lhapaipai/mini-file-manager-template)
 
 ## FilePickerType with mini-file-manager for your form
 
