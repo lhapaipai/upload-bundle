@@ -33,41 +33,37 @@ class FilePickerType extends AbstractType
       $this->fileManagerHelper->completeConfig($options['fileManagerConfig'], $this->locale)
     );
 
-    $formFilePickerConfig = array_merge([
+    $formPreviewConfig = array_merge([
       'multiple'      => false,
-      'previewFilter' => 'small',
-      'previewType'   => 'image'
-    ], $options['formFilePickerConfig']);
+      'filter' => 'small',
+      'type'   => 'image'
+    ], $options['formPreviewConfig']);
 
-    $selection = [];
+    $files = [];
     if (!empty($value)) {
       $values = explode(",", $value);
       foreach($values as $fileRelativePath) {
-        $selection[] = $this->fileInfosHelper->getInfos(
+        $files[] = $this->fileInfosHelper->getInfos(
           $fileRelativePath,
           $fileManagerConfig['entryPoints'][0]['origin']
         );
       }
     }
 
-    if ($formFilePickerConfig['multiple']) {
-      $fileManagerConfig['multiSelection'] = true;
+    if ($formPreviewConfig['multiple']) {
+      $fileManagerConfig['multiple'] = true;
     }
 
     $view->vars['type'] = 'hidden';
     $view->vars['filemanager_config'] = json_encode($fileManagerConfig);
-    $view->vars['formfilepicker_config'] = json_encode($formFilePickerConfig);
-    $view->vars['selection'] = json_encode($selection);
+    $view->vars['formpreview_config'] = json_encode($formPreviewConfig);
+    $view->vars['files'] = json_encode($files);
   }
 
   public function configureOptions(OptionsResolver $resolver)
   {
-    $resolver->setDefined('fileManagerConfig');
-    $resolver->setDefined('formFilePickerConfig');
     $resolver->setDefaults([
-      'formFilePickerConfig' => []
-    ]);
-    $resolver->setDefaults([
+      'formPreviewConfig' => [],
       'fileManagerConfig' => [
         'entryPoints' => [
           [
@@ -90,7 +86,6 @@ class FilePickerType extends AbstractType
         ],
         'locale' => 'fr',
       ],
-      
     ]);
   }
 

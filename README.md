@@ -412,10 +412,10 @@ class AdminUserFormType extends AbstractType
                 ],
                 'locale' => 'fr',
               ],
-              'formFilePickerConfig' => [
+              'formPreviewConfig' => [
                 'multiple'      => false,
-                'previewFilter' => 'small',
-                'previewType'   => 'image'
+                'filter'        => 'small',
+                'type'          => 'image'
               ]
             )
         ;
@@ -436,14 +436,12 @@ twig:
 
 ```twig
 {# templates/_form_theme.html.twig #}
-{% use "form_div_layout.html.twig" %}
-
 {%- block file_picker_widget -%}
     {%- set attr = attr|merge({
         class: (attr.class|default('') ~ ' file-picker')|trim,
-        'data-selection': selection,
-        'data-filemanager': filemanager_config,
-        'data-formfilepicker': formfilepicker_config
+        'data-files': files,
+        'data-minifilemanager': filemanager_config,
+        'data-formpreview': formpreview_config
     }) -%}
     {{- block('form_widget_simple') -}}
 {%- endblock -%}
