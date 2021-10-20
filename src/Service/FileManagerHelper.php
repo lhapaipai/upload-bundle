@@ -8,7 +8,7 @@ class FileManagerHelper {
   /** 
    * @deprecated use completeConfig instead
    */
-  public function getConfig($entryPoints, $isAdmin = true, $fileValidation = null)
+  public static function getConfig($entryPoints, $isAdmin = true, $fileValidation = null)
   {
     $completeEntryPoints = [];
     foreach ($entryPoints as $entryPoint) {
@@ -30,7 +30,7 @@ class FileManagerHelper {
 
   }
 
-  public function completeConfig($baseConfig = [], $locale = 'en') {
+  public static function completeConfig($baseConfig = [], $locale = 'en') {
     $entryPoints = $baseConfig['entryPoints'];
 
     $completeEntryPoints = [];
@@ -68,7 +68,4 @@ class FileManagerHelper {
     ], $baseConfig);
   }
 
-  public function completeFormConfig($baseConfig = []) {
-
-  }
 }
