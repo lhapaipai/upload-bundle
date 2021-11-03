@@ -25,12 +25,12 @@ class UploadController extends AbstractController
 
     protected function isAdmin()
     {
-      $user = $this->getUser();
-      if ($user) {
-        return in_array('ROLE_ADMIN', $user->getRoles());
-      } else {
-          return false;
-      }
+        $user = $this->getUser();
+        if ($user) {
+            return in_array('ROLE_ADMIN', $user->getRoles());
+        } else {
+            return false;
+        }
     }
 
     public function getFiles(Request $request)
@@ -39,18 +39,18 @@ class UploadController extends AbstractController
         $origin = $request->request->get('origin');
 
         return $this->json($this->fileInfosHelper->getInfosFromDirectory(
-          $directory,
-          $origin,
-          false,
-          true // with directory infos
+            $directory,
+            $origin,
+            false,
+            true // with directory infos
         ));
     }
 
     public function showFile($mode, $origin, $uploadRelativePath, Request $request, FileInfosHelperInterface $fileInfosHelper)
     {
         $fileInfos = $fileInfosHelper->getInfos($uploadRelativePath, $origin, true);
-        
-        if(!$this->fileInfosHelper::hasGrantedAccess($fileInfos, $this->getUser())) {
+
+        if (!$this->fileInfosHelper::hasGrantedAccess($fileInfos, $this->getUser())) {
             throw new InformativeException('Vous n\'avez pas les droits suffisants pour voir le contenu de ce fichier !!', 403);
         }
 
@@ -60,7 +60,7 @@ class UploadController extends AbstractController
 
         // bug sinon cela télécharge l'image au lieu de l'afficher !
         if ($response->getFile()->getMimeType() === 'image/svg') {
-          $response->headers->set('Content-Type', 'image/svg+xml');
+            $response->headers->set('Content-Type', 'image/svg+xml');
         }
         return $response;
     }
@@ -75,7 +75,7 @@ class UploadController extends AbstractController
             throw new InformativeException('Erreur dans la requête, aucun fichier sélectionné', 404);
         }
 
-        foreach($fileIds as $fileId) {
+        foreach ($fileIds as $fileId) {
             $fileInfos = $this->fileInfosHelper->getInfosById($fileId, true);
             if (!$this->fileInfosHelper::hasGrantedAccess($fileInfos, $user)) {
                 throw new InformativeException('Le fichier appartient à un projet qui ne vous concerne pas !!', 403);
@@ -108,16 +108,16 @@ class UploadController extends AbstractController
 
         $oldCompletePath = $this->fileInfosHelper->getAbsolutePath($infos['uploadRelativePath'], $infos['origin']);
 
-        $newRelativePath = $infos['directory'].'/'.$newFilename;
+        $newRelativePath = $infos['directory'] . '/' . $newFilename;
         $newCompletePath = $this->fileInfosHelper->getAbsolutePath($newRelativePath, $infos['origin']);
 
         if ($this->isAdmin() || !$readOnly) {
             $fs = new Filesystem();
             $fs->rename($oldCompletePath, $newCompletePath);
         } else {
-            throw new InformativeException('Impossible de renommer le fichier : '.$infos['filename'].' car vous n\'avez pas les droits nécessaires.', 401);
+            throw new InformativeException('Impossible de renommer le fichier : ' . $infos['filename'] . ' car vous n\'avez pas les droits nécessaires.', 401);
         }
-        
+
         return $this->json([
             'file' => $this->fileInfosHelper->getInfos($newRelativePath, $infos['origin'])
         ]);
@@ -131,6 +131,12 @@ class UploadController extends AbstractController
         $angle = (float) $request->request->get('rotate');
         $x = (float) $request->request->get('x');
         $y = (float) $request->request->get('y');
+        if ($x < 0) {
+            $x = 0;
+        }
+        if ($y < 0) {
+            $y = 0;
+        }
         $width = (float) $request->request->get('width');
         $height = (float) $request->request->get('height');
         $finalWidth = (float) $request->request->get('finalWidth');
@@ -151,7 +157,7 @@ class UploadController extends AbstractController
         foreach ($fileIds as $fileId) {
 
             $fileInfos = $this->fileInfosHelper->getInfosById($fileId, true);
-            if(!$this->fileInfosHelper::hasGrantedAccess($fileInfos, $this->getUser())) {
+            if (!$this->fileInfosHelper::hasGrantedAccess($fileInfos, $this->getUser())) {
                 $errors[] = $fileInfos['filename'];
             } else {
                 $fileHelper->delete($fileInfos['uploadRelativePath'], $fileInfos['origin']);
@@ -159,7 +165,7 @@ class UploadController extends AbstractController
         }
 
         if (count($errors) != 0) {
-            throw new InformativeException('Impossible de supprimer le(s) fichier(s) : '.implode(', ', $errors).' car vous n\'avez pas les droits suffisants.', 401);
+            throw new InformativeException('Impossible de supprimer le(s) fichier(s) : ' . implode(', ', $errors) . ' car vous n\'avez pas les droits suffisants.', 401);
         }
 
         return $this->json([
@@ -179,7 +185,7 @@ class UploadController extends AbstractController
             throw new InformativeException('Le nom du dossier est trop long.', 500);
         }
         $completePath = $this->fileInfosHelper->getAbsolutePath(
-            $infos['directory'].'/'.$filename,
+            $infos['directory'] . '/' . $filename,
             $infos['origin']
         );
 
@@ -187,7 +193,7 @@ class UploadController extends AbstractController
         $fs->mkdir($completePath);
 
         return $this->json([
-            'directory' => $this->fileInfosHelper->getInfos($infos['directory'].'/'.$filename, $infos['origin'])
+            'directory' => $this->fileInfosHelper->getInfos($infos['directory'] . '/' . $filename, $infos['origin'])
         ]);
     }
 
@@ -222,17 +228,17 @@ class UploadController extends AbstractController
         $tempId = $request->query->get('id');
 
         $uid = $request->query->get('resumableIdentifier');
-        $tempDir = sys_get_temp_dir().DIRECTORY_SEPARATOR.$uid;
+        $tempDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $uid;
 
         $filename = $request->query->get('resumableFilename');
         $totalSize = $request->query->getInt('resumableTotalSize');
         $totalChunks = $request->query->getInt('resumableTotalChunks');
 
-        $chunkFilename = 'chunk.part'.$request->query->getInt('resumableChunkNumber');
+        $chunkFilename = 'chunk.part' . $request->query->getInt('resumableChunkNumber');
 
         // on teste simplement si la portion de fichier a déjà été uploadée.
-        if($request->getMethod() === 'GET') {
-            $chunkPath = $tempDir.DIRECTORY_SEPARATOR.$chunkFilename;
+        if ($request->getMethod() === 'GET') {
+            $chunkPath = $tempDir . DIRECTORY_SEPARATOR . $chunkFilename;
 
             // le fichier n'existe pas on signale qu'il faudra donc l'uploader.
             if (!$fs->exists($chunkPath)) {
@@ -240,7 +246,7 @@ class UploadController extends AbstractController
             }
             // le fichier existe, on vérifiera comme lors d'un upload si on ne peut pas
             // déjà assembler le fichier
-            
+
         } else {
             // on upload la portion de fichier.
             $fileFromRequest = $request->files->get('file');
@@ -282,5 +288,4 @@ class UploadController extends AbstractController
             'data' => $fileInfos
         ]);
     }
-
 }
