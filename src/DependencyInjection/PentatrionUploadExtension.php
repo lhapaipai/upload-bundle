@@ -17,26 +17,14 @@ class PentatrionUploadExtension extends Extension
 
     $configuration = $this->getConfiguration($configs, $container);
     $config = $this->processConfiguration($configuration, $configs);
-
     $webRoot = $container->getParameter('kernel.project_dir').'/public';
     $origins = [];
 
-    // TODO faire cela dans le fichier Configuration.php
-    if (count($config['origins']) === 0) {
-      $origins = [
-        'public_uploads' => [
-          "path" => $webRoot.'/uploads',
-          'web_prefix' => '/uploads',
-          'liip_path' => '/uploads'
-        ]
-      ];
-    } else {
-      foreach ($config['origins'] as $key => $origin) {
-        if (strpos($origin['path'], $webRoot) === 0) {
-          $origin['web_prefix'] = substr($origin['path'], strlen($webRoot));
-        }
-        $origins[$key] = $origin;
+    foreach ($config['origins'] as $key => $origin) {
+      if (strpos($origin['path'], $webRoot) === 0) {
+        $origin['web_prefix'] = substr($origin['path'], strlen($webRoot));
       }
+      $origins[$key] = $origin;
     }
 
     if (!isset($config['default_origin'])) {

@@ -262,18 +262,22 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
     }
     foreach($uploadFields as $uploadField) {
       if (!isset($entity[$uploadField])) continue;
-      $uploadRelativePath = $entity[$uploadField];
-      $fileData = [
-        'original' => self::getHost().$this->getWebPath($uploadRelativePath, $originName)
-      ];
-      $liipPath = $this->getLiipPath($uploadRelativePath, $originName);
-
-      foreach ($filters as $filter) {
-        $fileData[$filter] = $this->getUrlThumbnail($liipPath, $filter);
-      }
-      $entity[$uploadField] = $fileData;
+      $entity[$uploadField] = $this->getThumbsFromPath($entity[$uploadField], $filters, $originName);
     }
     return $entity;
+  }
+
+  public function getThumbsFromPath($uploadRelativePath, $filters = [], $originName = "public_uploads")
+  {
+    $liipPath = $this->getLiipPath($uploadRelativePath, $originName);
+    $thumbs = [
+      'original' => self::getHost().$this->getWebPath($uploadRelativePath, $originName)
+    ];
+    foreach ($filters as $filter) {
+      $thumbs[$filter] = $this->getUrlThumbnail($liipPath, $filter);
+    }
+
+    return $thumbs;
   }
 
   public function hydrateFileWithAbsolutePath($fileInfos) {
