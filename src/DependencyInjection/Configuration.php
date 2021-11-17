@@ -13,6 +13,7 @@ class Configuration implements ConfigurationInterface
     $rootNode = $treeBuilder->getRootNode();
 
     $rootNode
+      ->fixXmlConfig('origin')
       ->children()
         ->scalarNode('file_infos_helper')
           ->defaultValue('pentatrion_upload.file_infos_helper')
@@ -21,15 +22,24 @@ class Configuration implements ConfigurationInterface
           ->scalarPrototype()->end()
             ->defaultValue(["small"])
         ->end()
-        ->scalarNode('default_origin')->end()
+        ->scalarNode('default_origin')
+          ->info('take first origin name if not set')
+        ->end()
         ->arrayNode('origins')
           ->useAttributeAsKey('name')
-          // ->isRequired()
-          // ->requiresAtLeastOneElement()
+          ->requiresAtLeastOneElement()
+          ->defaultValue([
+            'public_uploads' => [
+              'path' => '%kernel.project_dir%/public/uploads',
+              'liip_path' => '/uploads'
+            ]
+          ])
           ->arrayPrototype()
             ->children()
               ->scalarNode('path')->end()
-              ->scalarNode('liip_path')->end()
+              ->scalarNode('liip_path')
+                ->info('prefix to add to path to rely on one liip loader')
+              ->end()
             ->end()
           ->end()
       ->end()

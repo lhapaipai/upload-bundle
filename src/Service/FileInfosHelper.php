@@ -266,6 +266,7 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
     }
     foreach ($uploadFields as $uploadField) {
       if (!isset($entity[$uploadField])) continue;
+<<<<<<< HEAD
       $uploadRelativePath = $entity[$uploadField];
       $fileData = [
         'original' => self::getHost() . $this->getWebPath($uploadRelativePath, $originName)
@@ -276,13 +277,34 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
         $fileData[$filter] = $this->getUrlThumbnail($liipPath, $filter);
       }
       $entity[$uploadField] = $fileData;
+=======
+      $entity[$uploadField] = $this->getThumbsFromPath($entity[$uploadField], $filters, $originName);
+>>>>>>> 8b9ebc392dcae1a936c9093d77ae0f119acd6535
     }
     return $entity;
   }
 
+<<<<<<< HEAD
   public function hydrateFileWithAbsolutePath($fileInfos)
   {
     $fileInfos['absolutePath'] = $this->getAbsolutePath($fileInfos['uploadRelativePath'], $fileInfos['origin']);
+=======
+  public function getThumbsFromPath($uploadRelativePath, $filters = [], $originName = "public_uploads")
+  {
+    $liipPath = $this->getLiipPath($uploadRelativePath, $originName);
+    $thumbs = [
+      'original' => self::getHost().$this->getWebPath($uploadRelativePath, $originName)
+    ];
+    foreach ($filters as $filter) {
+      $thumbs[$filter] = $this->getUrlThumbnail($liipPath, $filter);
+    }
+
+    return $thumbs;
+  }
+
+  public function hydrateFileWithAbsolutePath($fileInfos) {
+    $fileInfos['absolutePath'] = $this->getAbsolutePath($fileInfos['uploadRelativePath'], $fileInfos['origin'] );
+>>>>>>> 8b9ebc392dcae1a936c9093d77ae0f119acd6535
     return $fileInfos;
   }
 
