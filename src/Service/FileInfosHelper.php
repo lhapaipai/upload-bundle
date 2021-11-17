@@ -103,7 +103,7 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
     // on prégénère les images dont on a besoin de figer l'url (via editeur markdown)
     // sinon liipImagine nous donne une url de redirection qui n'est pas utilisable.
     // et donc on ne met pas de timestamp
-    if (in_array($filter, self::$filtersToPregenerate) && $pregenerate) {
+    if (in_array($filter, $this::$filtersToPregenerate) && $pregenerate) {
       $filterManager = $this->container->get('filter.manager');
       $dataManager = $this->container->get('data.manager');
 
