@@ -31,11 +31,11 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
   public static function getSubscribedServices()
   {
     return [
-      'cache.manager' => '?'.CacheManager::class,
-      'data.manager'  => '?'.DataManager::class,
-      'filter.manager' => '?'.FilterManager::class,
+      'cache.manager' => '?' . CacheManager::class,
+      'data.manager'  => '?' . DataManager::class,
+      'filter.manager' => '?' . FilterManager::class,
       'router' => RouterInterface::class,
-      'serializer' => '?'.SerializerInterface::class
+      'serializer' => '?' . SerializerInterface::class
     ];
   }
 
@@ -50,8 +50,8 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
   public function getAbsolutePath($uploadRelativePath = '', $originName = null)
   {
     $originName = $originName ?? $this->defaultOriginName;
-    $suffix = $uploadRelativePath !== '' ? '/'.$uploadRelativePath : '';
-    return $this->origins[$originName]['path'].$suffix;
+    $suffix = $uploadRelativePath !== '' ? '/' . $uploadRelativePath : '';
+    return $this->origins[$originName]['path'] . $suffix;
   }
 
   // renvoie un chemin web absolu si le fichier est public.
@@ -66,13 +66,13 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
         'uploadRelativePath' => $uploadRelativePath
       ]);
     }
-    return $this->origins[$originName]['web_prefix'].'/'.$uploadRelativePath;
+    return $this->origins[$originName]['web_prefix'] . '/' . $uploadRelativePath;
   }
 
   public function getLiipPath($uploadRelativePath, $originName = null)
   {
     $originName = $originName ?? $this->defaultOriginName;
-    return $this->origins[$originName]['liip_path'].'/'.$uploadRelativePath;
+    return $this->origins[$originName]['liip_path'] . '/' . $uploadRelativePath;
   }
 
   // renvoie un identifiant pour liipImagine.
@@ -83,7 +83,8 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
   }
 
   /* à partir d'un webPath retrouve l'url de son miniature */
-  public function getUrlThumbnail($liipPath, $filter, $pregenerate = false, $withTimeStamp = true) {
+  public function getUrlThumbnail($liipPath, $filter, $pregenerate = false, $withTimeStamp = true, array $runtimeConfig = [])
+  {
     if (!$this->container->has('cache.manager')) {
       throw new \LogicException('You can not use the "getUrlThumbnail" method if the LiipImagineBundle is not available. Try running "composer require liip/imagine-bundle".');
     }
@@ -94,7 +95,7 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
     }
 
     if ($withTimeStamp) {
-      $suffix = '?'.time();
+      $suffix = '?' . time();
     } else {
       $suffix = '';
     }
@@ -109,18 +110,19 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
       if (!$cacheManager->isStored($liipPath, $filter)) {
         $binary = $dataManager->find($filter, $liipPath);
         $cacheManager->store(
-          $filterManager->applyFilter($binary, $filter),
+          $filterManager->applyFilter($binary, $filter, $runtimeConfig),
           $liipPath,
           $filter
         );
       }
       return $cacheManager->resolve($liipPath, $filter);
     } else {
-      return $cacheManager->getBrowserPath($liipPath,$filter,[],null,UrlGeneratorInterface::ABSOLUTE_URL).$suffix;
+      return $cacheManager->getBrowserPath($liipPath, $filter, $runtimeConfig, null, UrlGeneratorInterface::ABSOLUTE_URL) . $suffix;
     }
   }
 
-  public function getInfosById($id, $withAbsPath = false) {
+  public function getInfosById($id, $withAbsPath = false)
+  {
     $str = substr($id, 1);
     $firstColon = strpos($str, ":");
     $origin = substr($str, 0, $firstColon);
@@ -128,7 +130,8 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
     return $this->getInfos($uploadRelativePath, $origin, $withAbsPath);
   }
 
-  public function getInfos($uploadRelativePath, $originName = null, $withAbsPath = false) {
+  public function getInfos($uploadRelativePath, $originName = null, $withAbsPath = false)
+  {
     $absolutePath = $this->getAbsolutePath($uploadRelativePath, $originName);
     if (!file_exists($absolutePath)) {
       return null;
@@ -142,7 +145,7 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
       $directory = substr($uploadRelativePath, 0, $lastSlash);
     }
 
-    $mimeType = $file->isDir() 
+    $mimeType = $file->isDir()
       ? 'directory'
       : MimeTypes::getDefault()->guessMimeType($file->getPathname());
     list($mimePrincipal) = explode('/', $mimeType);
@@ -152,7 +155,7 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
       $icon = '/file-manager/icons/folder.svg';
       $webPath = null;
     } else {
-      $icon = '/file-manager/icons/'.self::getIconByMimeType($mimeType);
+      $icon = '/file-manager/icons/' . self::getIconByMimeType($mimeType);
       $webPath = $this->getWebPath($uploadRelativePath, $originName);
     }
 
@@ -178,8 +181,8 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
       // non défini si répertoire
       // lien direct s'il s'agit d'un dossier public
       // lien de stream s'il s'agit d'un dossier privé
-      'url'           => $webPath ? self::getHost().$webPath : null,
-      'urlTimestamped'=> $webPath ? self::getHost().$webPath."?".time() : null,
+      'url'           => $webPath ? self::getHost() . $webPath : null,
+      'urlTimestamped' => $webPath ? self::getHost() . $webPath . "?" . time() : null,
       'icon'          => $icon
     ];
 
@@ -200,18 +203,18 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
     }
 
     // on ne calcule des miniatures que si l'image est en dessous les 10Mo.
-    if ($infos['type'] === 'file' && $infos['size'] < 1024*1024*10 && $this->container->has('cache.manager')) {
+    if ($infos['type'] === 'file' && $infos['size'] < 1024 * 1024 * 10 && $this->container->has('cache.manager')) {
       if ($infos['mimeType'] === 'image/jpeg' || $infos['mimeType'] === 'image/png') {
         $infos['thumbnails'] = [];
         $liipPath = $this->getLiipPath($uploadRelativePath, $originName);
-        foreach($this->liipFilters as $liipFilterName) {
+        foreach ($this->liipFilters as $liipFilterName) {
           // TODO bien vérifier
           $infos['thumbnails'][$liipFilterName] = $this->getUrlThumbnail($liipPath, $liipFilterName, true);
         }
       } else if ($infos['mimeType'] === 'image/svg') {
         $infos['thumbnails'] = [];
         // si c'est un svg on propose le même fichier pour toutes les tailles
-        foreach($this->liipFilters as $liipFilterName) {
+        foreach ($this->liipFilters as $liipFilterName) {
           $infos['thumbnails'][$liipFilterName] = $infos['url'];
         }
       }
@@ -233,14 +236,14 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
       $fs->mkdir($absPath);
     }
 
-    if (!is_dir($absPath) ) {
+    if (!is_dir($absPath)) {
       throw new InformativeException('Le chemin spécifié n\'est pas un dossier.', 404);
     }
 
     $files = [];
     $finder->in($absPath);
-    foreach($finder as $file) {
-        $files[] = $this->getInfosFromFileObj($file, $withAbsPath);
+    foreach ($finder as $file) {
+      $files[] = $this->getInfosFromFileObj($file, $withAbsPath);
     }
     $data = [
       'files' => $files
@@ -248,23 +251,24 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
     if ($withDirectoryInfos) {
       $data['directory'] = $this->getInfos($uploadDirectory, $originName);
     }
-    
+
     $data = $this->addAdditionalInfosToDirectoryFiles($data);
     return $data;
   }
 
-  public function hydrateEntityWithUploadedFileData($entity, $uploadFields = [], $filters = [], $originName = "public_uploads") {
+  public function hydrateEntityWithUploadedFileData($entity, $uploadFields = [], $filters = [], $originName = "public_uploads")
+  {
     if (!is_array($entity)) {
       if (!$this->container->has("serializer")) {
         throw new \LogicException('You can not use the "hydrateEntityWithUploadedFileData" method if the Serializer component is not available. Try running "composer require symfony/serializer".');
       }
       $entity = $this->container->get("serializer")->normalize($entity, null);
     }
-    foreach($uploadFields as $uploadField) {
+    foreach ($uploadFields as $uploadField) {
       if (!isset($entity[$uploadField])) continue;
       $uploadRelativePath = $entity[$uploadField];
       $fileData = [
-        'original' => self::getHost().$this->getWebPath($uploadRelativePath, $originName)
+        'original' => self::getHost() . $this->getWebPath($uploadRelativePath, $originName)
       ];
       $liipPath = $this->getLiipPath($uploadRelativePath, $originName);
 
@@ -276,8 +280,9 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
     return $entity;
   }
 
-  public function hydrateFileWithAbsolutePath($fileInfos) {
-    $fileInfos['absolutePath'] = $this->getAbsolutePath($fileInfos['uploadRelativePath'], $fileInfos['origin'] );
+  public function hydrateFileWithAbsolutePath($fileInfos)
+  {
+    $fileInfos['absolutePath'] = $this->getAbsolutePath($fileInfos['uploadRelativePath'], $fileInfos['origin']);
     return $fileInfos;
   }
 
@@ -310,14 +315,15 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
 
   public static function getHost()
   {
-      if (!isset($_SERVER['REQUEST_SCHEME'])) {
-        return '';
-      }
-      return $_SERVER['REQUEST_SCHEME'].'://'.$_SERVER['SERVER_NAME'];
+    if (!isset($_SERVER['REQUEST_SCHEME'])) {
+      return '';
+    }
+    return $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['SERVER_NAME'];
   }
 
 
-  public function addAdditionalInfosToDirectoryFiles(&$data) {
+  public function addAdditionalInfosToDirectoryFiles(&$data)
+  {
     return $data;
   }
 
@@ -334,61 +340,84 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
   public static function getHumanSize($size)
   {
     if (!$size) {
-        return '';
+      return '';
     }
     $sz = ' KMGTP';
-    $factor = floor((strlen($size)-1)/3);
+    $factor = floor((strlen($size) - 1) / 3);
     if ($factor == 0) {
       return sprintf("%.0f octets", $size);
     }
-    return sprintf("%.1f ", $size/pow(1024, $factor)).@$sz[$factor].'o';
+    return sprintf("%.1f ", $size / pow(1024, $factor)) . @$sz[$factor] . 'o';
   }
 
   public static function getIconByMimeType($mimeType)
   {
     $mimeTypeExploded = explode('/', $mimeType);
 
-    switch($mimeTypeExploded[0]) {
+    switch ($mimeTypeExploded[0]) {
       case 'image':
-        switch($mimeTypeExploded[1]) {
-          case 'jpeg': return 'image-jpg.svg';
-          case 'png': return 'image-png.svg';
-          case 'webp': return 'image-webp.svg';
-          case 'svg+xml': case 'svg': return 'image-svg+xml.svg';
-          case 'vnd.adobe.photoshop': return 'application-photoshop.svg';
-          case 'x-xcf': return 'image-x-compressed-xcf.svg';
-          default: return 'image.svg';
+        switch ($mimeTypeExploded[1]) {
+          case 'jpeg':
+            return 'image-jpg.svg';
+          case 'png':
+            return 'image-png.svg';
+          case 'webp':
+            return 'image-webp.svg';
+          case 'svg+xml':
+          case 'svg':
+            return 'image-svg+xml.svg';
+          case 'vnd.adobe.photoshop':
+            return 'application-photoshop.svg';
+          case 'x-xcf':
+            return 'image-x-compressed-xcf.svg';
+          default:
+            return 'image.svg';
         }
       case 'video':
         return 'video-x-generic.svg';
       case 'audio':
         return 'application-ogg.svg';
-      // erreur import font
+        // erreur import font
       case 'font':
         return 'application-pgp-signature.svg';
       case 'application':
-        switch($mimeTypeExploded[1]) {
-          case 'pdf': return 'application-pdf.svg';
-          case 'illustrator': return 'application-illustrator.svg';
-          case 'json': return 'application-json.svg';
-          case 'vnd.oasis.opendocument.spreadsheet': return 'libreoffice-oasis-spreadsheet.svg';
-          case 'vnd.oasis.opendocument.text': return 'libreoffice-oasis-master-document.svg';
+        switch ($mimeTypeExploded[1]) {
+          case 'pdf':
+            return 'application-pdf.svg';
+          case 'illustrator':
+            return 'application-illustrator.svg';
+          case 'json':
+            return 'application-json.svg';
+          case 'vnd.oasis.opendocument.spreadsheet':
+            return 'libreoffice-oasis-spreadsheet.svg';
+          case 'vnd.oasis.opendocument.text':
+            return 'libreoffice-oasis-master-document.svg';
           case 'vnd.openxmlformats-officedocument.wordprocessingml.document':
-          case 'msword': return 'application-msword-template.svg';
+          case 'msword':
+            return 'application-msword-template.svg';
           case 'vnd.openxmlformats-officedocument.spreadsheetml.sheet':
-          case 'vnd.ms-excel': return 'application-vnd.ms-excel.svg';
-          case 'zip': return 'application-x-archive.svg';
-          default: return 'application-vnd.appimage.svg';
+          case 'vnd.ms-excel':
+            return 'application-vnd.ms-excel.svg';
+          case 'zip':
+            return 'application-x-archive.svg';
+          default:
+            return 'application-vnd.appimage.svg';
         }
       case 'text':
-        switch($mimeTypeExploded[1]) {
-          case 'x-php': return 'text-x-php.svg';
-          case 'x-java': return 'text-x-javascript.svg';
-          case 'css': return 'text-css.svg';
-          case 'html': return 'text-html.svg';
-          case 'xml': return 'text-xml.svg';
+        switch ($mimeTypeExploded[1]) {
+          case 'x-php':
+            return 'text-x-php.svg';
+          case 'x-java':
+            return 'text-x-javascript.svg';
+          case 'css':
+            return 'text-css.svg';
+          case 'html':
+            return 'text-html.svg';
+          case 'xml':
+            return 'text-xml.svg';
 
-          default: return 'text.svg';
+          default:
+            return 'text.svg';
         }
         return 'text-x-script.png';
         break;

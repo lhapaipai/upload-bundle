@@ -19,5 +19,5 @@ interface FileInfosHelperInterface
   public function addAdditionalInfos(&$infos);
   public function addAdditionalInfosToDirectoryFiles(&$data);
   public function getId(string $uploadRelativePath, string $originName = null);
-  public function getUrlThumbnail(string $id, string $filter, bool $pregenerate = false);
+  public function getUrlThumbnail(string $id, string $filter, bool $pregenerate = false, array $runtimeConfig = []);
 }

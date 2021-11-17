@@ -1,4 +1,5 @@
 <?php
+
 namespace Pentatrion\UploadBundle\Service;
 
 use Imagine\Gd\Imagine;
@@ -21,7 +22,7 @@ class FileHelper implements ServiceSubscriberInterface
   private $container;
   private $fileInfosHelper;
 
-  public function __construct(FileInfosHelperInterface $fileInfosHelper, ContainerInterface $container) 
+  public function __construct(FileInfosHelperInterface $fileInfosHelper, ContainerInterface $container)
   {
     $this->container = $container;
     $this->fileInfosHelper = $fileInfosHelper;
@@ -31,7 +32,7 @@ class FileHelper implements ServiceSubscriberInterface
   {
 
     if (isset($options['prefix'])) {
-      $filename = $options['prefix'].$filename;
+      $filename = $options['prefix'] . $filename;
     }
 
     if (isset($options['extension']) && $options['extension']) {
@@ -46,21 +47,22 @@ class FileHelper implements ServiceSubscriberInterface
       $filenameWithoutExtension = Urlizer::urlize($filenameWithoutExtension);
     }
     if (isset($options['unique']) && $options['unique']) {
-      $filenameWithoutExtension = $filenameWithoutExtension.'-'.uniqid();
+      $filenameWithoutExtension = $filenameWithoutExtension . '-' . uniqid();
     } else {
-      if (file_exists($dir.DIRECTORY_SEPARATOR.$filenameWithoutExtension.'.'.$extension)) {
+      if (file_exists($dir . DIRECTORY_SEPARATOR . $filenameWithoutExtension . '.' . $extension)) {
         $counter = 1;
-        while (file_exists($dir.DIRECTORY_SEPARATOR.$filenameWithoutExtension.'-'.$counter.'.'.$extension)) {
+        while (file_exists($dir . DIRECTORY_SEPARATOR . $filenameWithoutExtension . '-' . $counter . '.' . $extension)) {
           $counter++;
         }
-        $filenameWithoutExtension = $filenameWithoutExtension.'-'.$counter;
+        $filenameWithoutExtension = $filenameWithoutExtension . '-' . $counter;
       }
     }
-    return $filenameWithoutExtension.'.'.$extension;
+    return $filenameWithoutExtension . '.' . $extension;
   }
 
   // validation pour le file manager
-  public function validateFile(File $file = null) {
+  public function validateFile(File $file = null)
+  {
 
     if (!$file instanceof File) {
       return ['Veuillez envoyer un fichier.'];
@@ -75,31 +77,31 @@ class FileHelper implements ServiceSubscriberInterface
       [
         new NotBlank(),
         new FileConstraint([
-            'maxSize' => '500M',
-            'maxSizeMessage' => 'Votre fichier est trop grand ({{ size }} {{ suffix }}). limite : {{ limit }} {{ suffix }}.',
-            'mimeTypes' => [
-                'text/*',
-                'image/*', // image/vnd.adobe.photoshop  image/x-xcf
-                'video/*',
-                'audio/*',
-                'application/rtf',
-                'application/pdf',
-                'application/xml',
-                'application/zip',
-                'font/ttf',
-                'font/woff',
-                'font/woff2',
-                'application/vnd.oasis.opendocument.spreadsheet', // tableur libreoffice ods
-                'application/vnd.oasis.opendocument.text', // traitement de texte odt
-                'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // docx
-                'application/msword', // doc
-                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // xlsx
-                'application/vnd.ms-excel', // xls
-                'application/json',
-                'application/illustrator', // .ai
+          'maxSize' => '500M',
+          'maxSizeMessage' => 'Votre fichier est trop grand ({{ size }} {{ suffix }}). limite : {{ limit }} {{ suffix }}.',
+          'mimeTypes' => [
+            'text/*',
+            'image/*', // image/vnd.adobe.photoshop  image/x-xcf
+            'video/*',
+            'audio/*',
+            'application/rtf',
+            'application/pdf',
+            'application/xml',
+            'application/zip',
+            'font/ttf',
+            'font/woff',
+            'font/woff2',
+            'application/vnd.oasis.opendocument.spreadsheet', // tableur libreoffice ods
+            'application/vnd.oasis.opendocument.text', // traitement de texte odt
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // docx
+            'application/msword', // doc
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // xlsx
+            'application/vnd.ms-excel', // xls
+            'application/json',
+            'application/illustrator', // .ai
 
-            ],
-            'mimeTypesMessage' => 'Ce type de fichier n\'est pas accepté : {{ type }}. Vous pouvez importer des textes, images, vidéos, audio, .pdf, .zip, .ods, .odt, .doc, .docx, .xls, .xlsx, .psd, .ai'
+          ],
+          'mimeTypesMessage' => 'Ce type de fichier n\'est pas accepté : {{ type }}. Vous pouvez importer des textes, images, vidéos, audio, .pdf, .zip, .ods, .odt, .doc, .docx, .xls, .xlsx, .psd, .ai'
         ])
       ]
     );
@@ -117,13 +119,13 @@ class FileHelper implements ServiceSubscriberInterface
   public function uploadFile(File $file, $destRelDir, $originName = null, $options = [])
   {
     $destAbsDir = $this->fileInfosHelper->getAbsolutePath($destRelDir, $originName);
-    
+
     if (isset($options['forceFilename'])) {
-      $newFilename = $options['forceFilename'].'.'.$file->guessExtension();
+      $newFilename = $options['forceFilename'] . '.' . $file->guessExtension();
     } else {
       if (isset($options['guessExtension']) && $options['guessExtension']) {
         $extension = $file->guessExtension();
-        $options['extension'] = $extension; 
+        $options['extension'] = $extension;
       }
       if ($file instanceof UploadedFile) {
         $filename = $file->getClientOriginalName();
@@ -132,13 +134,13 @@ class FileHelper implements ServiceSubscriberInterface
       }
       $newFilename = $this->sanitizeFilename($filename, $destAbsDir, [...$options, 'urlize' => true]);
     }
-    
+
     $fs = new Filesystem();
     if (!$fs->exists($destAbsDir)) {
       $fs->mkdir($destAbsDir);
     }
     $file->move($destAbsDir, $newFilename);
-    return $this->fileInfosHelper->getInfos($destRelDir.DIRECTORY_SEPARATOR.$newFilename, $originName);
+    return $this->fileInfosHelper->getInfos(($destRelDir ? $destRelDir . DIRECTORY_SEPARATOR : "") . $newFilename, $originName);
   }
 
   public function createFileFromChunks($tempDir, $filename, $totalSize, $totalChunks, $destRelDir, $originName = null, $options = [])
@@ -146,26 +148,26 @@ class FileHelper implements ServiceSubscriberInterface
     $fs = new Filesystem();
     $totalFilesOnServerSize = 0;
     $files = array_diff(scandir($tempDir), array('..', '.', 'output', 'done'));
-    
+
     $destAbsDir = $this->fileInfosHelper->getAbsolutePath($destRelDir, $originName);
     $newFilename = $this->sanitizeFilename($filename, $destAbsDir, [...$options, 'urlize' => true]);
 
     // si on reprend un upload au milieu des test on parviendra à générer le fichier, il faut donc que
     // les tests suivants renvoient tout de suite les bonnes infos.
-    if ($fs->exists($destAbsDir.DIRECTORY_SEPARATOR.$newFilename)) {
-      return $this->fileInfosHelper->getInfos($destRelDir.DIRECTORY_SEPARATOR.$newFilename, $originName);
+    if ($fs->exists($destAbsDir . DIRECTORY_SEPARATOR . $newFilename)) {
+      return $this->fileInfosHelper->getInfos(($destRelDir ? $destRelDir . DIRECTORY_SEPARATOR : "") . $newFilename, $originName);
     }
 
-    foreach($files as $file) {
-        $tempFileSize = \filesize($tempDir.DIRECTORY_SEPARATOR.$file);
-        $totalFilesOnServerSize += $tempFileSize;
+    foreach ($files as $file) {
+      $tempFileSize = \filesize($tempDir . DIRECTORY_SEPARATOR . $file);
+      $totalFilesOnServerSize += $tempFileSize;
     }
 
     if ($totalFilesOnServerSize >= $totalSize) {
-      
-      if (($fp = \fopen($tempDir.DIRECTORY_SEPARATOR.'output', 'w')) !== false) {
+
+      if (($fp = \fopen($tempDir . DIRECTORY_SEPARATOR . 'output', 'w')) !== false) {
         for ($i = 1; $i <= $totalChunks; $i++) {
-          \fwrite($fp, \file_get_contents($tempDir.DIRECTORY_SEPARATOR.'chunk.part'.$i));
+          \fwrite($fp, \file_get_contents($tempDir . DIRECTORY_SEPARATOR . 'chunk.part' . $i));
         }
         fclose($fp);
       }
@@ -174,24 +176,23 @@ class FileHelper implements ServiceSubscriberInterface
         $fs->mkdir($destAbsDir);
       }
 
-      $file = new File($tempDir.DIRECTORY_SEPARATOR.'output');
+      $file = new File($tempDir . DIRECTORY_SEPARATOR . 'output');
 
       $violations = $this->validateFile($file);
       if (count($violations) > 0) {
-          throw new InformativeException(implode('\n', $violations), 415);
+        throw new InformativeException(implode('\n', $violations), 415);
       }
 
       $file->move($destAbsDir, $newFilename);
 
       // permet de supprimer récursivement sans problème avec les chunks concurrents
-      $fs->rename($tempDir, $tempDir."_done");
-      $fs->remove($tempDir."_done");
+      $fs->rename($tempDir, $tempDir . "_done");
+      $fs->remove($tempDir . "_done");
 
-      return $this->fileInfosHelper->getInfos($destRelDir.DIRECTORY_SEPARATOR.$newFilename, $originName);
+      return $this->fileInfosHelper->getInfos(($destRelDir ? $destRelDir . DIRECTORY_SEPARATOR : "") . $newFilename, $originName);
     } else {
       return false;
     }
-
   }
 
   public function uploadChunkFile(File $file, $destDir, $filename)
@@ -220,7 +221,6 @@ class FileHelper implements ServiceSubscriberInterface
   {
     if (!class_exists("Imagine\Gd\Imagine")) {
       throw new InformativeException('Unable to crop image. Did you install Imagine ? composer require imagine/imagine', 401);
-
     }
     $absolutePath = $this->fileInfosHelper->getAbsolutePath($uploadRelativePath, $origin);
     $imagine = new Imagine();
@@ -230,7 +230,7 @@ class FileHelper implements ServiceSubscriberInterface
       $image->rotate($angle);
     }
     if ($width >= 1 && $height >= 1) {
-      $image->crop(new Point($x,$y), new Box($width,$height));
+      $image->crop(new Point($x, $y), new Box($width, $height));
     }
     if ($finalWidth >= 1 && $finalHeight >= 1) {
       $image->resize(new Box($finalWidth, $finalHeight));
@@ -248,8 +248,8 @@ class FileHelper implements ServiceSubscriberInterface
   public static function getSubscribedServices()
   {
     return [
-      'cachemanager' => '?'.CacheManager::class,
-      'validator' => '?'.ValidatorInterface::class
+      'cachemanager' => '?' . CacheManager::class,
+      'validator' => '?' . ValidatorInterface::class
     ];
   }
 }
