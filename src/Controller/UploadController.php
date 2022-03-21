@@ -9,6 +9,8 @@ use Pentatrion\UploadBundle\Service\FileInfosHelperInterface;
 use Pentatrion\UploadBundle\Service\Urlizer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
@@ -23,7 +25,7 @@ class UploadController extends AbstractController
         $this->fileInfosHelper = $fileInfosHelper;
     }
 
-    protected function isAdmin()
+    protected function isAdmin(): bool
     {
         $user = $this->getUser();
         if ($user) {
@@ -33,7 +35,7 @@ class UploadController extends AbstractController
         }
     }
 
-    public function getFiles(Request $request)
+    public function getFiles(Request $request): JsonResponse
     {
         $directory = $request->request->get('directory');
         $origin = $request->request->get('origin');
@@ -46,7 +48,7 @@ class UploadController extends AbstractController
         ));
     }
 
-    public function showFile($mode, $origin, $uploadRelativePath, Request $request, FileInfosHelperInterface $fileInfosHelper)
+    public function showFile($mode, $origin, $uploadRelativePath, Request $request, FileInfosHelperInterface $fileInfosHelper): BinaryFileResponse
     {
         $fileInfos = $fileInfosHelper->getInfos($uploadRelativePath, $origin, true);
 
@@ -65,7 +67,7 @@ class UploadController extends AbstractController
         return $response;
     }
 
-    public function downloadFile(Request $request)
+    public function downloadFile(Request $request): BinaryFileResponse
     {
         $fileIds = $request->request->get('files');
         $files = [];
@@ -87,7 +89,7 @@ class UploadController extends AbstractController
         return $this->file($archiveTempPath, 'archive.zip');
     }
 
-    public function editFileRequest(Request $request)
+    public function editFileRequest(Request $request): JsonResponse
     {
         $infos = $request->request->all();
         $readOnly = $request->request->getBoolean('readOnly');
@@ -123,7 +125,7 @@ class UploadController extends AbstractController
         ]);
     }
 
-    public function cropFile(Request $request, FileHelper $fileHelper)
+    public function cropFile(Request $request, FileHelper $fileHelper): JsonResponse
     {
         $uploadRelativePath = $request->request->get('uploadRelativePath');
         $origin = $request->request->get('origin');
@@ -149,7 +151,7 @@ class UploadController extends AbstractController
         ]);
     }
 
-    public function deleteFile(Request $request, FileHelper $fileHelper)
+    public function deleteFile(Request $request, FileHelper $fileHelper): JsonResponse
     {
         $fileIds = $request->request->get('files');
         $errors = [];
@@ -176,7 +178,7 @@ class UploadController extends AbstractController
     /**
      * @Route("/add-directory", name="media_add_directory")
      */
-    public function addDirectory(Request $request, FileHelper $fileHelper)
+    public function addDirectory(Request $request, FileHelper $fileHelper): JsonResponse
     {
         $infos = $request->request->all();
 
@@ -197,7 +199,7 @@ class UploadController extends AbstractController
         ]);
     }
 
-    public function uploadFile(FileHelper $fileHelper, Request $request): Response
+    public function uploadFile(FileHelper $fileHelper, Request $request): JsonResponse
     {
         $fileFromRequest = $request->files->get('file');
         $destRelDir = $request->request->get('directory');
@@ -219,7 +221,7 @@ class UploadController extends AbstractController
         ]);
     }
 
-    public function chunkFile(FileHelper $fileHelper, Request $request): Response
+    public function chunkFile(FileHelper $fileHelper, Request $request): JsonResponse
     {
         $fs = new Filesystem();
 

@@ -7,44 +7,43 @@ use Symfony\Component\Config\Definition\ConfigurationInterface;
 
 class Configuration implements ConfigurationInterface
 {
-  public function getConfigTreeBuilder()
-  {
-    $treeBuilder = new TreeBuilder('pentatrion_upload');
-    $rootNode = $treeBuilder->getRootNode();
+    public function getConfigTreeBuilder(): TreeBuilder
+    {
+        $treeBuilder = new TreeBuilder('pentatrion_upload');
+        $rootNode = $treeBuilder->getRootNode();
 
-    $rootNode
-      ->fixXmlConfig('origin')
-      ->children()
-        ->scalarNode('file_infos_helper')
-          ->defaultValue('pentatrion_upload.file_infos_helper')
-        ->end()
-        ->arrayNode('liip_filters')
-          ->scalarPrototype()->end()
-            ->defaultValue(["small"])
-        ->end()
-        ->scalarNode('default_origin')
-          ->info('take first origin name if not set')
-        ->end()
-        ->arrayNode('origins')
-          ->useAttributeAsKey('name')
-          ->requiresAtLeastOneElement()
-          ->defaultValue([
-            'public_uploads' => [
-              'path' => '%kernel.project_dir%/public/uploads',
-              'liip_path' => '/uploads'
-            ]
-          ])
-          ->arrayPrototype()
+        $rootNode
+            ->fixXmlConfig('origin')
             ->children()
-              ->scalarNode('path')->end()
-              ->scalarNode('liip_path')
-                ->info('prefix to add to path to rely on one liip loader')
-              ->end()
+            ->scalarNode('file_infos_helper')
+            ->defaultValue('pentatrion_upload.file_infos_helper')
             ->end()
-          ->end()
-      ->end()
-    ;
+            ->arrayNode('liip_filters')
+            ->scalarPrototype()->end()
+            ->defaultValue(["small"])
+            ->end()
+            ->scalarNode('default_origin')
+            ->info('take first origin name if not set')
+            ->end()
+            ->arrayNode('origins')
+            ->useAttributeAsKey('name')
+            ->requiresAtLeastOneElement()
+            ->defaultValue([
+                'public_uploads' => [
+                    'path' => '%kernel.project_dir%/public/uploads',
+                    'liip_path' => '/uploads'
+                ]
+            ])
+            ->arrayPrototype()
+            ->children()
+            ->scalarNode('path')->end()
+            ->scalarNode('liip_path')
+            ->info('prefix to add to path to rely on one liip loader')
+            ->end()
+            ->end()
+            ->end()
+            ->end();
 
-    return $treeBuilder;
-  }
+        return $treeBuilder;
+    }
 }

@@ -2,14 +2,9 @@
 
 namespace Pentatrion\UploadBundle\Twig;
 
-use App\Service\FileInfosHelper;
-use Liip\ImagineBundle\Imagine\Cache\CacheManager;
 use Pentatrion\UploadBundle\Service\FileInfosHelperInterface;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
-
-use function Symfony\Component\DependencyInjection\Loader\Configurator\ref;
 
 class AssetExtension extends AbstractExtension
 {
@@ -23,32 +18,31 @@ class AssetExtension extends AbstractExtension
     public function getFunctions(): array
     {
         return [
-          new TwigFunction('uploaded_file_id', [$this, 'getUploadedFileId']),
-          new TwigFunction('uploaded_file_web_path', [$this, 'getUploadedFileWebPath']),
-          new TwigFunction('uploaded_image_filtered', [$this, 'getUploadedImageFiltered']),
+            new TwigFunction('uploaded_file_id', [$this, 'getUploadedFileId']),
+            new TwigFunction('uploaded_file_web_path', [$this, 'getUploadedFileWebPath']),
+            new TwigFunction('uploaded_image_filtered', [$this, 'getUploadedImageFiltered']),
         ];
     }
 
-    public function getUploadedFileId($uploadRelativePath, $originName = null)
+    public function getUploadedFileId($uploadRelativePath, $originName = null): string
     {
-      return $this->fileInfosHelper->getId($uploadRelativePath, $originName);
+        return $this->fileInfosHelper->getId($uploadRelativePath, $originName);
     }
 
-    public function getUploadedFileWebPath($uploadRelativePath, $originName = null)
+    public function getUploadedFileWebPath($uploadRelativePath, $originName = null): string
     {
-      return $this->fileInfosHelper->getWebPath($uploadRelativePath, $originName);
-    }
-
-    public function getUploadedImageFiltered($uploadRelativePath, $filter, $originName = null)
-    {
-      $id = $this->fileInfosHelper->getId($uploadRelativePath, $originName);
-      $extension = substr($id, strrpos($id, '.') + 1);
-      if ($extension === 'svg') {
         return $this->fileInfosHelper->getWebPath($uploadRelativePath, $originName);
-      } else {
-        $liipPath = $this->fileInfosHelper->getLiipPath($uploadRelativePath, $originName);
-        return $this->fileInfosHelper->getUrlThumbnail($liipPath, $filter);
-      }
     }
 
+    public function getUploadedImageFiltered($uploadRelativePath, $filter, $originName = null): string
+    {
+        $id = $this->fileInfosHelper->getId($uploadRelativePath, $originName);
+        $extension = substr($id, strrpos($id, '.') + 1);
+        if ($extension === 'svg') {
+            return $this->fileInfosHelper->getWebPath($uploadRelativePath, $originName);
+        } else {
+            $liipPath = $this->fileInfosHelper->getLiipPath($uploadRelativePath, $originName);
+            return $this->fileInfosHelper->getUrlThumbnail($liipPath, $filter);
+        }
+    }
 }
