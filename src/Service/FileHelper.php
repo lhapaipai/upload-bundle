@@ -132,7 +132,7 @@ class FileHelper implements ServiceSubscriberInterface
             } else {
                 $filename = $file->getFilename();
             }
-            $newFilename = $this->sanitizeFilename($filename, $destAbsDir, [...$options, 'urlize' => true]);
+            $newFilename = $this->sanitizeFilename($filename, $destAbsDir, array_merge($options, ['urlize' => true]));
         }
 
         $fs = new Filesystem();
@@ -150,7 +150,7 @@ class FileHelper implements ServiceSubscriberInterface
         $files = array_diff(scandir($tempDir), array('..', '.', 'output', 'done'));
 
         $destAbsDir = $this->fileInfosHelper->getAbsolutePath($destRelDir, $originName);
-        $newFilename = $this->sanitizeFilename($filename, $destAbsDir, [...$options, 'urlize' => true]);
+        $newFilename = $this->sanitizeFilename($filename, $destAbsDir, array_merge($options, ['urlize' => true]));
 
         // si on reprend un upload au milieu des test on parviendra à générer le fichier, il faut donc que
         // les tests suivants renvoient tout de suite les bonnes infos.
