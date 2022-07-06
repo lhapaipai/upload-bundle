@@ -244,7 +244,7 @@ class UploadController extends AbstractController
 
             // le fichier n'existe pas on signale qu'il faudra donc l'uploader.
             if (!$fs->exists($chunkPath)) {
-                return new Response('', 204);
+                return new JsonResponse('', 204);
             }
             // le fichier existe, on vérifiera comme lors d'un upload si on ne peut pas
             // déjà assembler le fichier

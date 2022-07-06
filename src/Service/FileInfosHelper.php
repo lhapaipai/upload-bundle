@@ -26,7 +26,7 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
 
     // comme on veut un lien qui soit directement utilisable pour l'import
     // futur, c'est nécessaire de prégénérer le miniature
-    protected static $filtersToPregenerate = ['large'];
+    protected static $filtersToPregenerate = ['large', 'small'];
 
     public static function getSubscribedServices(): array
     {
@@ -35,7 +35,8 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
             'data.manager'  => '?' . DataManager::class,
             'filter.manager' => '?' . FilterManager::class,
             'router' => RouterInterface::class,
-            'serializer' => '?' . SerializerInterface::class
+            'serializer' => '?' . SerializerInterface::class,
+            'resolver.app' => '?' . AbsoluteWebPathResolver::class
         ];
     }
 
@@ -82,8 +83,12 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
         return "@$originName:$uploadRelativePath";
     }
 
-    /* à partir d'un webPath retrouve l'url de son miniature */
-    public function getUrlThumbnail($liipPath, $filter, $pregenerate = false, $withTimeStamp = true, array $runtimeConfig = []): string | null
+    /**
+     * @return string | null 
+     * 
+     * à partir d'un webPath retrouve l'url de son miniature
+     */
+    public function getUrlThumbnail($liipPath, $filter, $pregenerate = false, $withTimeStamp = true, array $runtimeConfig = [])
     {
         if (!$this->container->has('cache.manager')) {
             throw new \LogicException('You can not use the "getUrlThumbnail" method if the LiipImagineBundle is not available. Try running "composer require liip/imagine-bundle".');
@@ -115,9 +120,9 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
                     $filter
                 );
             }
-            return $cacheManager->resolve($liipPath, $filter);
+            return $cacheManager->resolve($liipPath, $filter) . $suffix;
         } else {
-            return $cacheManager->getBrowserPath($liipPath, $filter, $runtimeConfig, null, UrlGeneratorInterface::ABSOLUTE_URL) . $suffix;
+            return $cacheManager->getBrowserPath($liipPath, $filter, $runtimeConfig, null, UrlGeneratorInterface::ABSOLUTE_PATH) . $suffix;
         }
     }
 
@@ -183,6 +188,8 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
             // lien de stream s'il s'agit d'un dossier privé
             'url'           => $webPath ? self::getHost() . $webPath : null,
             'urlTimestamped' => $webPath ? self::getHost() . $webPath . "?" . time() : null,
+            'webPath'           => $webPath,
+            'webPathTimestamped' => $webPath ? $webPath . "?" . time() : null,
             'icon'          => $icon
         ];
 
@@ -202,20 +209,49 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
             $infos['absolutePath'] = $absolutePath;
         }
 
+        $appResolver = $this->container->get('resolver.app');
+
+        // // on ne calcule des miniatures que si l'image est en dessous les 10Mo.
+        // if ($infos['type'] === 'file' && $infos['size'] < 1024 * 1024 * 10 && $this->container->has('cache.manager')) {
+        //     if ($infos['mimeType'] === 'image/jpeg' || $infos['mimeType'] === 'image/png') {
+        //         $infos['thumbnails'] = [];
+        //         $liipPath = $this->getLiipPath($uploadRelativePath, $originName);
+        //         foreach ($this->liipFilters as $liipFilterName) {
+        //             // TODO bien vérifier
+        //             $infos['thumbnails'][$liipFilterName] = $this->getUrlThumbnail($liipPath, $liipFilterName, true);
+        //         }
+        //     } else if ($infos['mimeType'] === 'image/svg') {
+        //         $infos['thumbnails'] = [];
+        //         // si c'est un svg on propose le même fichier pour toutes les tailles
+        //         foreach ($this->liipFilters as $liipFilterName) {
+        //             $infos['thumbnails'][$liipFilterName] = $infos['url'];
+        //         }
+        //     }
+        // }
+
         // on ne calcule des miniatures que si l'image est en dessous les 10Mo.
         if ($infos['type'] === 'file' && $infos['size'] < 1024 * 1024 * 10 && $this->container->has('cache.manager')) {
             if ($infos['mimeType'] === 'image/jpeg' || $infos['mimeType'] === 'image/png') {
-                $infos['thumbnails'] = [];
+                $infos['filters'] = [];
                 $liipPath = $this->getLiipPath($uploadRelativePath, $originName);
                 foreach ($this->liipFilters as $liipFilterName) {
                     // TODO bien vérifier
-                    $infos['thumbnails'][$liipFilterName] = $this->getUrlThumbnail($liipPath, $liipFilterName, true);
+                    $webPath = $this->getUrlThumbnail($liipPath, $liipFilterName, true);
+                    $fsPath = $appResolver->getFilePath($liipPath, $liipFilterName);
+                    list($imageWidth, $imageHeight) = getimagesize($fsPath);
+                    $infos['filters'][$liipFilterName] = [
+                        'webPath' => $webPath,
+                        'width' => $imageWidth,
+                        'height' => $imageHeight,
+                    ];
                 }
             } else if ($infos['mimeType'] === 'image/svg') {
-                $infos['thumbnails'] = [];
+                $infos['filters'] = [];
                 // si c'est un svg on propose le même fichier pour toutes les tailles
                 foreach ($this->liipFilters as $liipFilterName) {
-                    $infos['thumbnails'][$liipFilterName] = $infos['url'];
+                    $infos['filters'][$liipFilterName] = [
+                        'webPath' => $infos['url']
+                    ];
                 }
             }
         }
@@ -300,9 +336,13 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
     {
         $absolutePath = $file->getRealPath();
         $hasOrigin = false;
-        foreach ($this->origins as $keyOrigin => $origin) {
+        $currentOrigin = null;
+        $originKey = null;
+        foreach ($this->origins as $key => $origin) {
             if (strpos($absolutePath, $origin['path']) === 0) {
                 $hasOrigin = true;
+                $currentOrigin = $origin;
+                $originKey = $key;
                 break;
             }
         }
@@ -311,8 +351,8 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
         }
         // + 1 pour retirer le slash initial
         return $this->getInfos(
-            substr($absolutePath, strlen($origin['path']) + 1),
-            $keyOrigin,
+            substr($absolutePath, strlen($currentOrigin['path']) + 1),
+            $originKey,
             $withAbsPath
         );
     }

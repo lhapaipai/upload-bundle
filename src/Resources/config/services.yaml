@@ -16,6 +16,17 @@ services:
   #   arguments:
   #     $router: "@router"
 
+  Pentatrion\UploadBundle\Service\AbsoluteWebPathResolver:
+    arguments:
+        $filesystem: '@filesystem'
+        $requestContext: '@router.request_context'
+        $webRootDir: '%kernel.project_dir%/public'
+        $cachePrefix: 'media/cache'
+    tags:
+        -
+            name: "liip_imagine.cache.resolver"
+            resolver: absolute_web_path
+
   Pentatrion\UploadBundle\Form\FilePickerType:
     arguments:
       $fileManagerHelper: '@Pentatrion\UploadBundle\Service\FileManagerHelper'

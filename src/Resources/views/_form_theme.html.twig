@@ -1,11 +1,11 @@
 {% use "form_div_layout.html.twig" %}
 
 {%- block file_picker_widget -%}
-    {%- set attr = attr|merge({
-        class: (attr.class|default('') ~ ' file-picker')|trim,
-        'data-files': files,
-        'data-minifilemanager': filemanager_config,
-        'data-formpreview': formpreview_config
-    }) -%}
-    {{- block('form_widget_simple') -}}
+{%- set attr = attr|merge({
+class: (attr.class|default('') ~ ' file-picker')|trim,
+'data-files': files,
+'data-minifilemanager': filemanager_config,
+'data-formpreview': formpreview_config
+}) -%}
+{{- block('form_widget_simple') -}}
 {%- endblock -%}
