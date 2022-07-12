@@ -2,14 +2,16 @@
 
 namespace Pentatrion\UploadBundle\Form;
 
+use App\Entity\UploadedFile;
 use Pentatrion\UploadBundle\Service\FileManagerHelperInterface;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\FormView;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
-class FilePickerType extends AbstractType
+class FilesPickerType extends AbstractType
 {
     private $fileManagerHelper;
     private $locale;
@@ -26,10 +28,10 @@ class FilePickerType extends AbstractType
     {
         $fileManagerConfig = ($this->fileManagerHelper->completeConfig($options['fileManagerConfig'], $this->locale)
         );
-        $fileManagerConfig['multiple'] = false;
+        $fileManagerConfig['multiple'] = true;
 
         $filePickerConfig = array_merge([
-            'multiple'      => false,
+            'multiple'      => true,
             'filter' => 'small',
             'type'   => 'image'
         ], $options['filePickerConfig']);
@@ -65,11 +67,15 @@ class FilePickerType extends AbstractType
                 ],
                 'locale' => 'fr',
             ],
+            'entry_type' => UploadedFileType::class,
+            'allow_add' => true,
+            'allow_delete' => true,
+
         ]);
     }
 
     public function getParent()
     {
-        return UploadedFileType::class;
+        return CollectionType::class;
     }
 }

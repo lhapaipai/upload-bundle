@@ -10,9 +10,12 @@ services:
       $liipFilters: "%pentatrion_upload.liip_filters%"
     tags: ["container.service_subscriber"]
 
+  pentatrion_upload.file_manager_helper:
+    class: Pentatrion\UploadBundle\Service\FileManagerHelper
+
   Pentatrion\UploadBundle\Service\FileInfosHelper: "@pentatrion_upload.file_infos_helper"
 
-  Pentatrion\UploadBundle\Service\FileManagerHelper: ~
+  Pentatrion\UploadBundle\Service\FileManagerHelper: "@pentatrion_upload.file_manager_helper"
   #   arguments:
   #     $router: "@router"
 
@@ -27,15 +30,28 @@ services:
             name: "liip_imagine.cache.resolver"
             resolver: absolute_web_path
 
-  Pentatrion\UploadBundle\Form\FilePickerType:
+  Pentatrion\UploadBundle\Form\FilePickerLegacyType:
     arguments:
       $fileManagerHelper: '@Pentatrion\UploadBundle\Service\FileManagerHelper'
       $fileInfosHelper: '@Pentatrion\UploadBundle\Service\FileInfosHelperInterface'
       $requestStack: '@request_stack'
     tags: ["form.type"]
 
+  Pentatrion\UploadBundle\Form\FilePickerType:
+    arguments:
+      $fileManagerHelper: '@pentatrion_upload.file_manager_helper'
+      $requestStack: '@request_stack'
+    tags: ["form.type"]
+
+  Pentatrion\UploadBundle\Form\FilesPickerType:
+    arguments:
+      $fileManagerHelper: '@pentatrion_upload.file_manager_helper'
+      $requestStack: '@request_stack'
+    tags: ["form.type"]
+
   # c'est ce service qui peut être surchargé
   Pentatrion\UploadBundle\Service\FileInfosHelperInterface: "@pentatrion_upload.file_infos_helper"
+  Pentatrion\UploadBundle\Service\FileManagerHelperInterface: "@pentatrion_upload.file_manager_helper"
 
   pentatrion_upload.file_helper:
     class: Pentatrion\UploadBundle\Service\FileHelper

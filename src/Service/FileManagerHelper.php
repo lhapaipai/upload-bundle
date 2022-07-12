@@ -2,7 +2,7 @@
 
 namespace Pentatrion\UploadBundle\Service;
 
-class FileManagerHelper
+class FileManagerHelper implements FileManagerHelperInterface
 {
 
     public static function completeConfig($baseConfig = [], $locale = 'en'): array
