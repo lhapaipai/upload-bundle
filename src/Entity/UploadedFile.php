@@ -6,7 +6,7 @@ use App\Repository\UploadedFileRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * @ORM\Entity(repositoryClass=UploadedFileRepository::class)
+ * TODO ORM\Entity(repositoryClass=UploadedFileRepository::class)
  */
 class UploadedFile
 {
