@@ -9,6 +9,7 @@ interface FileInfosHelperInterface
     public function getLiipPath(string $uploadRelativePath, string $origin): string;
     public function getId(string $uploadRelativePath, string $originName = null): string;
     public function getUrlThumbnail(string $id, string $filter, bool $pregenerate = false, $withTimeStamp = true, array $runtimeConfig = []);
+    public function getUploadedFileFromPath($uploadRelativePath, $originName = null): ?array;
     public function getInfosById(string $fileId, bool $withAbsPath = false): array;
     public function getInfos(string $uploadRelativePath, string $origin, bool $withAbsPath = false): array;
     public function getInfosFromDirectory(string $directorySuffix, string $origin, bool $withAbsPath = false, bool $withDirectoryInfos = false): array;

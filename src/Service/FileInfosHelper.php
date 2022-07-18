@@ -135,6 +135,43 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
         return $this->getInfos($uploadRelativePath, $origin, $withAbsPath);
     }
 
+    public function getUploadedFileFromPath($uploadRelativePath, $originName = null): ?array
+    {
+        $absolutePath = $this->getAbsolutePath($uploadRelativePath, $originName);
+        if (!file_exists($absolutePath)) {
+            return null;
+        }
+        $file = new \SplFileInfo($absolutePath);
+
+        $lastSlash = strrpos($uploadRelativePath, '/');
+        if ($lastSlash === false) {
+            $directory = '';
+        } else {
+            $directory = substr($uploadRelativePath, 0, $lastSlash);
+        }
+
+        $mimeType = $file->isDir()
+            ? 'directory'
+            : MimeTypes::getDefault()->guessMimeType($file->getPathname());
+        list($mimePrincipal) = explode('/', $mimeType);
+
+        if ($mimePrincipal === 'image' && $mimeType !== "image/svg" && $mimeType !== 'image/svg+xml') {
+            list($imageWidth, $imageHeight) = getimagesize($absolutePath);
+        } else {
+            $imageWidth = null;
+            $imageHeight = null;
+        }
+        return [
+            'mimeType' => $mimeType,
+            'type' => $mimePrincipal,
+            'width' => $imageWidth,
+            'height' => $imageHeight,
+            'filename' => $file->getFilename(),
+            'directory' => $directory,
+            'origin' => $originName
+        ];
+    }
+
     public function getInfos($uploadRelativePath, $originName = null, $withAbsPath = false): array
     {
         $absolutePath = $this->getAbsolutePath($uploadRelativePath, $originName);

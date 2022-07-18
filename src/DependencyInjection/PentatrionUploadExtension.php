@@ -39,5 +39,8 @@ class PentatrionUploadExtension extends Extension
         if (null !== $config['file_infos_helper']) {
             $container->setAlias('Pentatrion\UploadBundle\Service\FileInfosHelperInterface', $config['file_infos_helper']);
         }
+        if (null !== $config['file_manager_helper']) {
+            $container->setAlias('Pentatrion\UploadBundle\Service\FileManagerHelperInterface', $config['file_manager_helper']);
+        }
     }
 }

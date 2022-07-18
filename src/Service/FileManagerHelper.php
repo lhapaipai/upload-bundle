@@ -5,7 +5,7 @@ namespace Pentatrion\UploadBundle\Service;
 class FileManagerHelper implements FileManagerHelperInterface
 {
 
-    public static function completeConfig($baseConfig = [], $locale = 'en'): array
+    public function completeConfig($baseConfig = [], $locale = 'en'): array
     {
         $entryPoints = $baseConfig['entryPoints'];
 
@@ -40,7 +40,13 @@ class FileManagerHelper implements FileManagerHelperInterface
             'fileValidation' => null,
             'entryPoints' => $completeEntryPoints,
             'fileUpload' => $fileUpload,
-            'locale' => $locale
+            'locale' => $locale,
+            'injectCssVars' => true,
+            'themePrefix' => "penta",
+            'form' => [
+                'filter' => 'small',
+                'type'   => 'image'
+            ]
         ], $baseConfig);
     }
 }

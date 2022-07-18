@@ -2,7 +2,7 @@
 
 namespace Pentatrion\UploadBundle\Form;
 
-use App\Entity\UploadedFile;
+use Pentatrion\UploadBundle\Entity\UploadedFile;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -12,6 +12,7 @@ class UploadedFileType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
+            ->add('type')
             ->add('mimeType')
             ->add('width')
             ->add('height')
