@@ -20,12 +20,12 @@ use Symfony\Contracts\Service\ServiceSubscriberInterface;
 class FileHelper implements ServiceSubscriberInterface
 {
     private $container;
-    private $fileInfosHelper;
+    private $uploadedFileHelper;
 
-    public function __construct(FileInfosHelperInterface $fileInfosHelper, ContainerInterface $container)
+    public function __construct(UploadedFileHelperInterface $uploadedFileHelper, ContainerInterface $container)
     {
         $this->container = $container;
-        $this->fileInfosHelper = $fileInfosHelper;
+        $this->uploadedFileHelper = $uploadedFileHelper;
     }
 
     public function sanitizeFilename($filename, $dir, $options = []): ?string
@@ -118,7 +118,7 @@ class FileHelper implements ServiceSubscriberInterface
     // pour un client http:http 664
     public function uploadFile(File $file, $destRelDir, $originName = null, $options = [])
     {
-        $destAbsDir = $this->fileInfosHelper->getAbsolutePath($destRelDir, $originName);
+        $destAbsDir = $this->uploadedFileHelper->getAbsolutePath($destRelDir, $originName);
 
         if (isset($options['forceFilename'])) {
             $newFilename = $options['forceFilename'] . '.' . $file->guessExtension();
@@ -140,7 +140,7 @@ class FileHelper implements ServiceSubscriberInterface
             $fs->mkdir($destAbsDir);
         }
         $file->move($destAbsDir, $newFilename);
-        return $this->fileInfosHelper->getInfos(($destRelDir ? $destRelDir . DIRECTORY_SEPARATOR : "") . $newFilename, $originName);
+        return $this->uploadedFileHelper->getUploadedFile(($destRelDir ? $destRelDir . DIRECTORY_SEPARATOR : "") . $newFilename, $originName);
     }
 
     public function createFileFromChunks($tempDir, $filename, $totalSize, $totalChunks, $destRelDir, $originName = null, $options = [])
@@ -149,13 +149,13 @@ class FileHelper implements ServiceSubscriberInterface
         $totalFilesOnServerSize = 0;
         $files = array_diff(scandir($tempDir), array('..', '.', 'output', 'done'));
 
-        $destAbsDir = $this->fileInfosHelper->getAbsolutePath($destRelDir, $originName);
+        $destAbsDir = $this->uploadedFileHelper->getAbsolutePath($destRelDir, $originName);
         $newFilename = $this->sanitizeFilename($filename, $destAbsDir, array_merge($options, ['urlize' => true]));
 
         // si on reprend un upload au milieu des test on parviendra à générer le fichier, il faut donc que
         // les tests suivants renvoient tout de suite les bonnes infos.
         if ($fs->exists($destAbsDir . DIRECTORY_SEPARATOR . $newFilename)) {
-            return $this->fileInfosHelper->getInfos(($destRelDir ? $destRelDir . DIRECTORY_SEPARATOR : "") . $newFilename, $originName);
+            return $this->uploadedFileHelper->getUploadedFile(($destRelDir ? $destRelDir . DIRECTORY_SEPARATOR : "") . $newFilename, $originName);
         }
 
         foreach ($files as $file) {
@@ -189,7 +189,7 @@ class FileHelper implements ServiceSubscriberInterface
             $fs->rename($tempDir, $tempDir . "_done");
             $fs->remove($tempDir . "_done");
 
-            return $this->fileInfosHelper->getInfos(($destRelDir ? $destRelDir . DIRECTORY_SEPARATOR : "") . $newFilename, $originName);
+            return $this->uploadedFileHelper->getUploadedFile(($destRelDir ? $destRelDir . DIRECTORY_SEPARATOR : "") . $newFilename, $originName);
         } else {
             return false;
         }
@@ -206,13 +206,13 @@ class FileHelper implements ServiceSubscriberInterface
 
     public function delete(string $uploadRelativePath, $originName): void
     {
-        $absolutePath = $this->fileInfosHelper->getAbsolutePath($uploadRelativePath, $originName);
+        $absolutePath = $this->uploadedFileHelper->getAbsolutePath($uploadRelativePath, $originName);
 
         $fs = new Filesystem();
         $fs->remove($absolutePath);
 
         if ($this->container->has('cachemanager')) {
-            $liipPath = $this->fileInfosHelper->getLiipPath($uploadRelativePath, $originName);
+            $liipPath = $this->uploadedFileHelper->getLiipPath($uploadRelativePath, $originName);
             $this->container->get('cachemanager')->remove($liipPath);
         }
     }
@@ -222,7 +222,7 @@ class FileHelper implements ServiceSubscriberInterface
         if (!class_exists("Imagine\Gd\Imagine")) {
             throw new InformativeException('Unable to crop image. Did you install Imagine ? composer require imagine/imagine', 401);
         }
-        $absolutePath = $this->fileInfosHelper->getAbsolutePath($uploadRelativePath, $origin);
+        $absolutePath = $this->uploadedFileHelper->getAbsolutePath($uploadRelativePath, $origin);
         $imagine = new Imagine();
         $image = $imagine->open($absolutePath);
 
@@ -239,7 +239,7 @@ class FileHelper implements ServiceSubscriberInterface
         $image->save($absolutePath);
 
         if ($this->container->has('cachemanager')) {
-            $liipPath = $this->fileInfosHelper->getLiipPath($uploadRelativePath, $origin);
+            $liipPath = $this->uploadedFileHelper->getLiipPath($uploadRelativePath, $origin);
             $this->container->get('cachemanager')->remove($liipPath);
         }
         return true;

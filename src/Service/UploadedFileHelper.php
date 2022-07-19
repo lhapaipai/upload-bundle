@@ -2,11 +2,11 @@
 
 namespace Pentatrion\UploadBundle\Service;
 
-use Doctrine\ORM\Mapping\Entity;
 use Exception;
 use Liip\ImagineBundle\Imagine\Cache\CacheManager;
 use Liip\ImagineBundle\Imagine\Data\DataManager;
 use Liip\ImagineBundle\Imagine\Filter\FilterManager;
+use Pentatrion\UploadBundle\Entity\UploadedFile;
 use Pentatrion\UploadBundle\Exception\InformativeException;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\Filesystem\Filesystem;
@@ -17,7 +17,7 @@ use Symfony\Component\Routing\RouterInterface;
 use Symfony\Contracts\Service\ServiceSubscriberInterface;
 use Symfony\Component\Serializer\SerializerInterface;
 
-class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInterface
+class UploadedFileHelper implements UploadedFileHelperInterface, ServiceSubscriberInterface
 {
     protected $container;
     protected $origins;
@@ -46,6 +46,11 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
         $this->origins = $uploadOrigins;
         $this->defaultOriginName = $defaultOriginName;
         $this->liipFilters = $liipFilters;
+    }
+
+    public function isOriginPublic($originName)
+    {
+        return isset($this->origins[$originName]['web_prefix']);
     }
 
     public function getAbsolutePath($uploadRelativePath = '', $originName = null): string
@@ -77,10 +82,19 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
     }
 
     // renvoie un identifiant pour liipImagine.
-    public function getId($uploadRelativePath, $originName = null): string
+    public function getLiipId($uploadRelativePath, $originName = null): string
     {
         $originName = $originName ?? $this->defaultOriginName;
         return "@$originName:$uploadRelativePath";
+    }
+
+    public function parseLiipId($liipId): array
+    {
+        $str = substr($liipId, 1);
+        $firstColon = strpos($str, ":");
+        $origin = substr($str, 0, $firstColon);
+        $uploadRelativePath = substr($str, $firstColon + 1);
+        return [$uploadRelativePath, $origin];
     }
 
     /**
@@ -126,21 +140,28 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
         }
     }
 
-    public function getInfosById($id, $withAbsPath = false): array
+    public function getUploadedFileByLiipId($liipId): UploadedFile
     {
-        $str = substr($id, 1);
-        $firstColon = strpos($str, ":");
-        $origin = substr($str, 0, $firstColon);
-        $uploadRelativePath = substr($str, $firstColon + 1);
-        return $this->getInfos($uploadRelativePath, $origin, $withAbsPath);
+        list($uploadRelativePath, $origin) = $this->parseLiipId($liipId);
+        return $this->getUploadedFile($uploadRelativePath, $origin);
     }
 
-    public function getUploadedFileFromPath($uploadRelativePath, $originName = null): ?array
+    public function addAbsolutePath(UploadedFile $uploadedFile): UploadedFile
+    {
+        $uploadedFile->setAbsolutePath(
+            $this->getAbsolutePath($uploadedFile->getUploadRelativePath(), $uploadedFile->getOrigin())
+        );
+
+        return $uploadedFile;
+    }
+
+    public function getUploadedFile($uploadRelativePath, $originName = null): UploadedFile
     {
         $absolutePath = $this->getAbsolutePath($uploadRelativePath, $originName);
         if (!file_exists($absolutePath)) {
             return null;
         }
+
         $file = new \SplFileInfo($absolutePath);
 
         $lastSlash = strrpos($uploadRelativePath, '/');
@@ -150,155 +171,43 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
             $directory = substr($uploadRelativePath, 0, $lastSlash);
         }
 
-        $mimeType = $file->isDir()
-            ? 'directory'
-            : MimeTypes::getDefault()->guessMimeType($file->getPathname());
-        list($mimePrincipal) = explode('/', $mimeType);
-
-        if ($mimePrincipal === 'image' && $mimeType !== "image/svg" && $mimeType !== 'image/svg+xml') {
-            list($imageWidth, $imageHeight) = getimagesize($absolutePath);
+        if ($file->isDir()) {
+            $webPath = $mimeGroup = $mimeType = null;
+            $icon = 'folder.svg';
         } else {
-            $imageWidth = null;
-            $imageHeight = null;
-        }
-        return [
-            'mimeType' => $mimeType,
-            'type' => $mimePrincipal,
-            'width' => $imageWidth,
-            'height' => $imageHeight,
-            'filename' => $file->getFilename(),
-            'directory' => $directory,
-            'origin' => $originName
-        ];
-    }
-
-    public function getInfos($uploadRelativePath, $originName = null, $withAbsPath = false): array
-    {
-        $absolutePath = $this->getAbsolutePath($uploadRelativePath, $originName);
-        if (!file_exists($absolutePath)) {
-            return null;
-        }
-        $file = new \SplFileInfo($absolutePath);
-
-        $lastSlash = strrpos($uploadRelativePath, '/');
-        if ($lastSlash === false) {
-            $directory = '';
-        } else {
-            $directory = substr($uploadRelativePath, 0, $lastSlash);
-        }
-
-        $mimeType = $file->isDir()
-            ? 'directory'
-            : MimeTypes::getDefault()->guessMimeType($file->getPathname());
-        list($mimePrincipal) = explode('/', $mimeType);
-
-        $dir = $file->isDir();
-        if ($dir) {
-            $icon = '/file-manager/icons/folder.svg';
-            $webPath = null;
-        } else {
-            $icon = '/file-manager/icons/' . self::getIconByMimeType($mimeType);
+            $mimeType = MimeTypes::getDefault()->guessMimeType($file->getPathname());
+            $mimeGroup = explode('/', $mimeType)[0];
+            $icon = self::getIconByMimeType($mimeType);
             $webPath = $this->getWebPath($uploadRelativePath, $originName);
         }
 
-        $infos = [
-            'inode'         => $file->getInode(),
+        if ($mimeGroup === 'image' && $mimeType !== "image/svg" && $mimeType !== 'image/svg+xml') {
+            list($imageWidth, $imageHeight) = getimagesize($absolutePath);
+        } else {
+            $imageWidth = $imageHeight = null;
+        }
+
+        $uploadedFile = (new UploadedFile())
             // identifiant unique composé de l'@origin:uploadRelativePath
             // ex: @public:uploads/projet/mon-projet/fichier.jpg
-            'id'            => $this->getId($uploadRelativePath, $originName),
-            'filename'      => $file->getFilename(),
-            'directory'     => $directory,
-            // chemin relatif par rapport aux origines définies dans pentatrion_upload.yaml
-            // ex: projet/mon-projet/fichier.jpg
-            'uploadRelativePath'  => $uploadRelativePath,
-            'mimeType'      => $mimeType,
-            'mimeGroup'     => $mimePrincipal,
-            'type'          => $file->getType(),
-            'uploader'      => 'Hugues',
-            'origin'        => $originName,
-            'size'          => $file->getSize(),
-            'humanSize'     => self::getHumanSize($file->getSize()),
-            'createdAt'     => (new \DateTime())->setTimestamp($file->getCTime())->format("c"),
-            'isDir'         => $dir,
-            // non défini si répertoire
-            // lien direct s'il s'agit d'un dossier public
-            // lien de stream s'il s'agit d'un dossier privé
-            'url'           => $webPath ? self::getHost() . $webPath : null,
-            'urlTimestamped' => $webPath ? self::getHost() . $webPath . "?" . time() : null,
-            'webPath'           => $webPath,
-            'webPathTimestamped' => $webPath ? $webPath . "?" . time() : null,
-            'icon'          => $icon
-        ];
+            ->setLiipId($this->getLiipId($uploadRelativePath, $originName))
+            ->setFilename($file->getFilename())
+            ->setDirectory($directory)
+            ->setMimeType($mimeType)
+            ->setMimeGroup($mimeGroup)
+            ->setImageWidth($imageWidth)
+            ->setImageHeight($imageHeight)
+            ->setType($file->getType())
+            ->setOrigin($originName)
+            ->setSize($file->getSize())
+            ->setCreatedAt((new \DateTime())->setTimestamp($file->getCTime()))
+            ->setIcon($icon)
+            ->setIsPublic($this->isOriginPublic($originName));
 
-        if ($mimePrincipal === 'image' && $mimeType !== "image/svg" && $mimeType !== 'image/svg+xml') {
-            list($imageWidth, $imageHeight) = getimagesize($absolutePath);
-            if (isset($imageWidth) && isset($imageHeight)) {
-                $infos['details'] = [
-                    'type'    => 'image',
-                    'width'   => $imageWidth,
-                    'height'  => $imageHeight,
-                    'ratio'   => $imageWidth / $imageHeight
-                ];
-            }
-        }
-
-        if ($withAbsPath) {
-            $infos['absolutePath'] = $absolutePath;
-        }
-
-        $appResolver = $this->container->get('resolver.app');
-
-        // // on ne calcule des miniatures que si l'image est en dessous les 10Mo.
-        // if ($infos['type'] === 'file' && $infos['size'] < 1024 * 1024 * 10 && $this->container->has('cache.manager')) {
-        //     if ($infos['mimeType'] === 'image/jpeg' || $infos['mimeType'] === 'image/png') {
-        //         $infos['thumbnails'] = [];
-        //         $liipPath = $this->getLiipPath($uploadRelativePath, $originName);
-        //         foreach ($this->liipFilters as $liipFilterName) {
-        //             // TODO bien vérifier
-        //             $infos['thumbnails'][$liipFilterName] = $this->getUrlThumbnail($liipPath, $liipFilterName, true);
-        //         }
-        //     } else if ($infos['mimeType'] === 'image/svg') {
-        //         $infos['thumbnails'] = [];
-        //         // si c'est un svg on propose le même fichier pour toutes les tailles
-        //         foreach ($this->liipFilters as $liipFilterName) {
-        //             $infos['thumbnails'][$liipFilterName] = $infos['url'];
-        //         }
-        //     }
-        // }
-
-        // on ne calcule des miniatures que si l'image est en dessous les 10Mo.
-        if ($infos['type'] === 'file' && $infos['size'] < 1024 * 1024 * 10 && $this->container->has('cache.manager')) {
-            if ($infos['mimeType'] === 'image/jpeg' || $infos['mimeType'] === 'image/png') {
-                $infos['filters'] = [];
-                $liipPath = $this->getLiipPath($uploadRelativePath, $originName);
-                foreach ($this->liipFilters as $liipFilterName) {
-                    // TODO bien vérifier
-                    $webPath = $this->getUrlThumbnail($liipPath, $liipFilterName, true);
-                    $fsPath = $appResolver->getFilePath($liipPath, $liipFilterName);
-                    list($imageWidth, $imageHeight) = getimagesize($fsPath);
-                    $infos['filters'][$liipFilterName] = [
-                        'webPath' => $webPath,
-                        'width' => $imageWidth,
-                        'height' => $imageHeight,
-                    ];
-                }
-            } else if ($infos['mimeType'] === 'image/svg') {
-                $infos['filters'] = [];
-                // si c'est un svg on propose le même fichier pour toutes les tailles
-                foreach ($this->liipFilters as $liipFilterName) {
-                    $infos['filters'][$liipFilterName] = [
-                        'webPath' => $infos['url']
-                    ];
-                }
-            }
-        }
-
-        $infos = $this->addAdditionalInfos($infos);
-
-        return $infos;
+        return $uploadedFile;
     }
 
-    public function getInfosFromDirectory($uploadDirectory, $originName = null, $withAbsPath = false, $withDirectoryInfos = false): array
+    public function getUploadedFilesFromDirectory($uploadDirectory, $originName = null, $withDirectoryInfos = false): array
     {
         $finder = (new Finder())->sortByType()->depth('== 0');
 
@@ -316,45 +225,17 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
         $files = [];
         $finder->in($absPath);
         foreach ($finder as $file) {
-            $files[] = $this->getInfosFromFileObj($file, $withAbsPath);
+            $files[] = $this->getUploadedFileFromFileObj($file);
         }
         $data = [
             'files' => $files
         ];
         if ($withDirectoryInfos) {
-            $data['directory'] = $this->getInfos($uploadDirectory, $originName);
+            $data['directory'] = $this->getUploadedFile($uploadDirectory, $originName);
         }
 
         $data = $this->addAdditionalInfosToDirectoryFiles($data);
         return $data;
-    }
-
-    public function hydrateEntityWithUploadedFileData($entity, $uploadFields = [], $filters = [], $originName = "public_uploads"): array
-    {
-        if (!is_array($entity)) {
-            if (!$this->container->has("serializer")) {
-                throw new \LogicException('You can not use the "hydrateEntityWithUploadedFileData" method if the Serializer component is not available. Try running "composer require symfony/serializer".');
-            }
-            $entity = $this->container->get("serializer")->normalize($entity, null);
-        }
-        foreach ($uploadFields as $uploadField) {
-            if (!isset($entity[$uploadField])) continue;
-            $entity[$uploadField] = $this->getThumbsFromPath($entity[$uploadField], $filters, $originName);
-        }
-        return $entity;
-    }
-
-    public function getThumbsFromPath($uploadRelativePath, $filters = [], $originName = "public_uploads"): array
-    {
-        $liipPath = $this->getLiipPath($uploadRelativePath, $originName);
-        $thumbs = [
-            'original' => self::getHost() . $this->getWebPath($uploadRelativePath, $originName)
-        ];
-        foreach ($filters as $filter) {
-            $thumbs[$filter] = $this->getUrlThumbnail($liipPath, $filter);
-        }
-
-        return $thumbs;
     }
 
     public function hydrateFileWithAbsolutePath($fileInfos): array
@@ -369,7 +250,7 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
         return $fileInfos;
     }
 
-    public function getInfosFromFileObj(\SplFileInfo $file, $withAbsPath = false): array
+    public function getUploadedFileFromFileObj(\SplFileInfo $file): UploadedFile
     {
         $absolutePath = $file->getRealPath();
         $hasOrigin = false;
@@ -387,10 +268,9 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
             throw new InformativeException('Chemin incorrect', 404);
         }
         // + 1 pour retirer le slash initial
-        return $this->getInfos(
+        return $this->getUploadedFile(
             substr($absolutePath, strlen($currentOrigin['path']) + 1),
-            $originKey,
-            $withAbsPath
+            $originKey
         );
     }
 
@@ -413,7 +293,7 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
         return $infos;
     }
 
-    public static function hasGrantedAccess(array $fileInfos, $user): bool
+    public static function hasGrantedAccess(UploadedFile $uploadedFile, $user): bool
     {
         return true;
     }
@@ -502,9 +382,6 @@ class FileInfosHelper implements FileInfosHelperInterface, ServiceSubscriberInte
                 }
                 return 'text-x-script.png';
                 break;
-            case 'directory':
-                return 'folder.svg';
-
             default:
                 return 'unknown.svg';
                 break;

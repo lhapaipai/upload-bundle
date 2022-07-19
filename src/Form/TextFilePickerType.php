@@ -2,7 +2,7 @@
 
 namespace Pentatrion\UploadBundle\Form;
 
-use Pentatrion\UploadBundle\Service\FileInfosHelperInterface;
+use Pentatrion\UploadBundle\Service\UploadedFileHelperInterface;
 use Pentatrion\UploadBundle\Service\FileManagerHelperInterface;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
@@ -15,16 +15,16 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 class TextFilePickerType extends AbstractType
 {
     private $fileManagerHelper;
-    private $fileInfosHelper;
+    private $uploadedFileHelper;
     private $locale;
 
     public function __construct(
         FileManagerHelperInterface $fileManagerHelper,
-        FileInfosHelperInterface $fileInfosHelper,
+        UploadedFileHelperInterface $uploadedFileHelper,
         RequestStack $requestStack
     ) {
         $this->fileManagerHelper = $fileManagerHelper;
-        $this->fileInfosHelper = $fileInfosHelper;
+        $this->uploadedFileHelper = $uploadedFileHelper;
         $this->locale = $requestStack->getCurrentRequest()->getLocale();
     }
 
@@ -39,7 +39,7 @@ class TextFilePickerType extends AbstractType
         if (!empty($value)) {
             $values = explode(",", $value);
             foreach ($values as $fileRelativePath) {
-                $uploadedFiles[] = $this->fileInfosHelper->getUploadedFileFromPath(
+                $uploadedFiles[] = $this->uploadedFileHelper->getUploadedFile(
                     $fileRelativePath,
                     $fileManagerConfig['entryPoints'][0]['origin']
                 );

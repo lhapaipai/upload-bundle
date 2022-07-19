@@ -3,21 +3,21 @@ parameters:
 services:
 
 
-  pentatrion_upload.file_infos_helper:
-    class: Pentatrion\UploadBundle\Service\FileInfosHelper
+  pentatrion_upload.uploaded_file_helper:
+    class: Pentatrion\UploadBundle\Service\UploadedFileHelper
     arguments:
       $uploadOrigins: "%pentatrion_upload.origins%"
       $container: '@Psr\Container\ContainerInterface'
       $defaultOriginName: "%pentatrion_upload.default_origin%"
       $liipFilters: "%pentatrion_upload.liip_filters%"
     tags: ["container.service_subscriber"]
-  Pentatrion\UploadBundle\Service\FileInfosHelper: "@pentatrion_upload.file_infos_helper"
-  Pentatrion\UploadBundle\Service\FileInfosHelperInterface: "@pentatrion_upload.file_infos_helper"
+  Pentatrion\UploadBundle\Service\UploadedFileHelper: "@pentatrion_upload.uploaded_file_helper"
+  Pentatrion\UploadBundle\Service\UploadedFileHelperInterface: "@pentatrion_upload.uploaded_file_helper"
 
   pentatrion_upload.file_manager_helper:
     class: Pentatrion\UploadBundle\Service\FileManagerHelper
-  #   arguments:
-  #     $router: "@router"
+    arguments:
+      $uploadOrigins: "%pentatrion_upload.origins%"
   Pentatrion\UploadBundle\Service\FileManagerHelper: "@pentatrion_upload.file_manager_helper"
   Pentatrion\UploadBundle\Service\FileManagerHelperInterface: "@pentatrion_upload.file_manager_helper"
 
@@ -35,7 +35,7 @@ services:
   Pentatrion\UploadBundle\Form\TextFilePickerType:
     arguments:
       $fileManagerHelper: '@Pentatrion\UploadBundle\Service\FileManagerHelperInterface'
-      $fileInfosHelper: '@Pentatrion\UploadBundle\Service\FileInfosHelperInterface'
+      $uploadedFileHelper: '@Pentatrion\UploadBundle\Service\UploadedFileHelperInterface'
       $requestStack: '@request_stack'
     tags: ["form.type"]
 
@@ -58,14 +58,14 @@ services:
     class: Pentatrion\UploadBundle\Service\FileHelper
     arguments:
       $container: '@Psr\Container\ContainerInterface'
-      $fileInfosHelper: '@Pentatrion\UploadBundle\Service\FileInfosHelperInterface'
+      $uploadedFileHelper: '@Pentatrion\UploadBundle\Service\UploadedFileHelperInterface'
     tags: ["container.service_subscriber"]
 
   Pentatrion\UploadBundle\Service\FileHelper: "@pentatrion_upload.file_helper"
 
   Pentatrion\UploadBundle\Twig\AssetExtension:
     arguments:
-      $fileInfosHelper: '@Pentatrion\UploadBundle\Service\FileInfosHelperInterface'
+      $uploadedFileHelper: '@Pentatrion\UploadBundle\Service\UploadedFileHelperInterface'
     tags: ["twig.extension"]
 
   Pentatrion\UploadBundle\EventSubscriber\ExceptionSubscriber:
@@ -76,6 +76,6 @@ services:
   Pentatrion\UploadBundle\Controller\UploadController:
     tags: ["controller.service_arguments"]
     arguments:
-      $fileInfosHelper: '@Pentatrion\UploadBundle\Service\FileInfosHelperInterface'
+      $uploadedFileHelper: '@Pentatrion\UploadBundle\Service\UploadedFileHelperInterface'
     calls:
       - [setContainer, ["@service_container"]]

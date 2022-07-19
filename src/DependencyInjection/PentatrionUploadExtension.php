@@ -36,8 +36,8 @@ class PentatrionUploadExtension extends Extension
         $container->setParameter('pentatrion_upload.default_origin', $config['default_origin']);
         $container->setParameter('pentatrion_upload.liip_filters', $config['liip_filters']);
 
-        if (null !== $config['file_infos_helper']) {
-            $container->setAlias('Pentatrion\UploadBundle\Service\FileInfosHelperInterface', $config['file_infos_helper']);
+        if (null !== $config['uploaded_file_helper']) {
+            $container->setAlias('Pentatrion\UploadBundle\Service\UploadedFileHelperInterface', $config['uploaded_file_helper']);
         }
         if (null !== $config['file_manager_helper']) {
             $container->setAlias('Pentatrion\UploadBundle\Service\FileManagerHelperInterface', $config['file_manager_helper']);

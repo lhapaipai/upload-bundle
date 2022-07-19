@@ -221,7 +221,7 @@ class ApiController extends AbstractController
 {
 
     #[Route('/page/{id}', name: 'projects')]
-    public function showProjects(Page $page, FileInfosHelper $fileInfosHelper): Response
+    public function showProjects(Page $page, UploadedFileHelper $fileInfosHelper): Response
     {
         // hydrate image field, with original/small/large webpaths.
         $page = $fileInfosHelper->hydrateEntityWithUploadedFileData($page, ["image"], ["small", "large"]);
@@ -459,8 +459,8 @@ configure your upload directories
 # config/packages/pentatrion_upload.yaml
 pentatrion_upload:
   # Advanced config
-  # must implement FileInfosHelperInterface
-  file_infos_helper: 'App\Service\AppFileInfosHelper'
+  # must implement UploadedFileHelperInterface
+  file_infos_helper: 'App\Service\AppUploadedFileHelper'
 
   origins:
     # choose the name of your choice
@@ -482,14 +482,14 @@ pentatrion_upload:
   liip_filters: ["small", "large"]
 ```
 
-if you set your class who implement FileInfosHelperInterface (`file_infos_helper` option), you can extends FileInfosHelper base class.
+if you set your class who implement UploadedFileHelperInterface (`file_infos_helper` option), you can extends UploadedFileHelper base class.
 
 ```php
 <?php
 namespace App\Service;
-use Pentatrion\UploadBundle\Service\FileInfosHelper;
+use Pentatrion\UploadBundle\Service\UploadedFileHelper;
 
-class AppFileInfosHelper extends FileInfosHelper
+class AppUploadedFileHelper extends UploadedFileHelper
 {
 }
 
@@ -535,7 +535,7 @@ add a config file for your bundle
 # config/packages/pentatrion_upload.yaml
 # default configuration
 pentatrion_upload:
-  file_infos_helper: 'Pentatrion\UploadBundle\Service\FileInfosHelper'
+  file_infos_helper: 'Pentatrion\UploadBundle\Service\UploadedFileHelper'
   origins:
     public_uploads:
       path: "%kernel.project_dir%/public/uploads"

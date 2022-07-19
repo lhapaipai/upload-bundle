@@ -4,6 +4,12 @@ namespace Pentatrion\UploadBundle\Service;
 
 class FileManagerHelper implements FileManagerHelperInterface
 {
+    protected $origins;
+
+    public function __construct($uploadOrigins)
+    {
+        $this->origins = $uploadOrigins;
+    }
 
     public function completeConfig($baseConfig = [], $locale = 'en'): array
     {
@@ -11,12 +17,14 @@ class FileManagerHelper implements FileManagerHelperInterface
 
         $completeEntryPoints = [];
         foreach ($entryPoints as $entryPoint) {
+            $originName = isset($entryPoint['origin']) ? $entryPoint['origin'] : 'public';
             $completeEntryPoints[] = array_merge([
                 'directory' => '',
-                'origin' => 'public',
+                'origin' => $originName,
                 'readOnly' => false,
                 'icon' => 'fa-link-1',
-                'label' => 'Répertoire principal'
+                'label' => 'Répertoire principal',
+                'webPrefix' => isset($this->origins[$originName]['web_prefix']) ? $this->origins[$originName]['web_prefix'] : null
             ], $entryPoint);
         }
         $fileUpload = isset($baseConfig['fileUpload']) && is_array($baseConfig['fileUpload'])

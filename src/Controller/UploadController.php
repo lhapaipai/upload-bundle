@@ -5,7 +5,7 @@ namespace Pentatrion\UploadBundle\Controller;
 use Pentatrion\UploadBundle\Classes\ExtendedZip;
 use Pentatrion\UploadBundle\Exception\InformativeException;
 use Pentatrion\UploadBundle\Service\FileHelper;
-use Pentatrion\UploadBundle\Service\FileInfosHelperInterface;
+use Pentatrion\UploadBundle\Service\UploadedFileHelperInterface;
 use Pentatrion\UploadBundle\Service\Urlizer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Filesystem\Filesystem;
@@ -18,11 +18,11 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class UploadController extends AbstractController
 {
-    private $fileInfosHelper;
+    private $uploadedFileHelper;
 
-    public function __construct(FileInfosHelperInterface $fileInfosHelper)
+    public function __construct(UploadedFileHelperInterface $uploadedFileHelper)
     {
-        $this->fileInfosHelper = $fileInfosHelper;
+        $this->uploadedFileHelper = $uploadedFileHelper;
     }
 
     protected function isAdmin(): bool
@@ -40,25 +40,25 @@ class UploadController extends AbstractController
         $directory = $request->request->get('directory');
         $origin = $request->request->get('origin');
 
-        return $this->json($this->fileInfosHelper->getInfosFromDirectory(
+        return $this->json($this->uploadedFileHelper->getUploadedFilesFromDirectory(
             $directory,
             $origin,
-            false,
             true // with directory infos
         ));
     }
 
-    public function showFile($mode, $origin, $uploadRelativePath, Request $request, FileInfosHelperInterface $fileInfosHelper): BinaryFileResponse
+    public function showFile($mode, $origin, $uploadRelativePath, Request $request, UploadedFileHelperInterface $uploadedFileHelper): BinaryFileResponse
     {
-        $fileInfos = $fileInfosHelper->getInfos($uploadRelativePath, $origin, true);
+        $uploadedFile = $uploadedFileHelper->getUploadedFile($uploadRelativePath, $origin);
+        $absolutePath = $uploadedFileHelper->getAbsolutePath($uploadRelativePath, $origin);
 
-        if (!$this->fileInfosHelper::hasGrantedAccess($fileInfos, $this->getUser())) {
+        if (!$this->uploadedFileHelper::hasGrantedAccess($uploadedFile, $this->getUser())) {
             throw new InformativeException('Vous n\'avez pas les droits suffisants pour voir le contenu de ce fichier !!', 403);
         }
 
         $disposition = $mode === 'show' ? ResponseHeaderBag::DISPOSITION_INLINE : ResponseHeaderBag::DISPOSITION_ATTACHMENT;
 
-        $response = $this->file($fileInfos['absolutePath'], null, $disposition);
+        $response = $this->file($absolutePath, null, $disposition);
 
         // bug sinon cela télécharge l'image au lieu de l'afficher !
         if ($response->getFile()->getMimeType() === 'image/svg') {
@@ -67,22 +67,24 @@ class UploadController extends AbstractController
         return $response;
     }
 
-    public function downloadFile(Request $request): BinaryFileResponse
+    public function downloadFile(Request $request, UploadedFileHelperInterface $uploadedFileHelper): BinaryFileResponse
     {
-        $fileIds = $request->request->get('files');
+        $liipIds = $request->request->get('files');
         $files = [];
         $user = $this->getUser();
 
-        if (count($fileIds) < 0) {
+        if (count($liipIds) < 0) {
             throw new InformativeException('Erreur dans la requête, aucun fichier sélectionné', 404);
         }
 
-        foreach ($fileIds as $fileId) {
-            $fileInfos = $this->fileInfosHelper->getInfosById($fileId, true);
-            if (!$this->fileInfosHelper::hasGrantedAccess($fileInfos, $user)) {
+        foreach ($liipIds as $liipId) {
+            $uploadedFile = $this->uploadedFileHelper->getUploadedFileByLiipId($liipId);
+            $this->uploadedFileHelper->addAbsolutePath($uploadedFile);
+
+            if (!$this->uploadedFileHelper::hasGrantedAccess($uploadedFile, $user)) {
                 throw new InformativeException('Le fichier appartient à un projet qui ne vous concerne pas !!', 403);
             }
-            $files[] = $fileInfos;
+            $files[] = $uploadedFile;
         }
 
         $archiveTempPath = ExtendedZip::createArchiveFromFiles($files);
@@ -108,10 +110,10 @@ class UploadController extends AbstractController
             $newFilename .= ".$extension";
         }
 
-        $oldCompletePath = $this->fileInfosHelper->getAbsolutePath($infos['uploadRelativePath'], $infos['origin']);
+        $oldCompletePath = $this->uploadedFileHelper->getAbsolutePath($infos['uploadRelativePath'], $infos['origin']);
 
         $newRelativePath = $infos['directory'] . '/' . $newFilename;
-        $newCompletePath = $this->fileInfosHelper->getAbsolutePath($newRelativePath, $infos['origin']);
+        $newCompletePath = $this->uploadedFileHelper->getAbsolutePath($newRelativePath, $infos['origin']);
 
         if ($this->isAdmin() || !$readOnly) {
             $fs = new Filesystem();
@@ -121,7 +123,7 @@ class UploadController extends AbstractController
         }
 
         return $this->json([
-            'file' => $this->fileInfosHelper->getInfos($newRelativePath, $infos['origin'])
+            'file' => $this->uploadedFileHelper->getUploadedFile($newRelativePath, $infos['origin'])
         ]);
     }
 
@@ -147,22 +149,22 @@ class UploadController extends AbstractController
         $fileHelper->cropImage($uploadRelativePath, $origin, $x, $y, $width, $height, $finalWidth, $finalHeight, $angle);
 
         return $this->json([
-            'file' => $this->fileInfosHelper->getInfos($uploadRelativePath, $origin)
+            'file' => $this->uploadedFileHelper->getUploadedFile($uploadRelativePath, $origin)
         ]);
     }
 
     public function deleteFile(Request $request, FileHelper $fileHelper): JsonResponse
     {
-        $fileIds = $request->request->get('files');
+        $liipIds = $request->request->get('files');
         $errors = [];
 
-        foreach ($fileIds as $fileId) {
+        foreach ($liipIds as $liipId) {
 
-            $fileInfos = $this->fileInfosHelper->getInfosById($fileId, true);
-            if (!$this->fileInfosHelper::hasGrantedAccess($fileInfos, $this->getUser())) {
-                $errors[] = $fileInfos['filename'];
+            $uploadedFile = $this->uploadedFileHelper->getUploadedFileByLiipId($liipId);
+            if (!$this->uploadedFileHelper::hasGrantedAccess($uploadedFile, $this->getUser())) {
+                $errors[] = $uploadedFile->getFilename();
             } else {
-                $fileHelper->delete($fileInfos['uploadRelativePath'], $fileInfos['origin']);
+                $fileHelper->delete($uploadedFile->getUploadRelativePath(), $uploadedFile->getOrigin());
             }
         }
 
@@ -186,7 +188,7 @@ class UploadController extends AbstractController
         if (strlen($filename) > 128) {
             throw new InformativeException('Le nom du dossier est trop long.', 500);
         }
-        $completePath = $this->fileInfosHelper->getAbsolutePath(
+        $completePath = $this->uploadedFileHelper->getAbsolutePath(
             $infos['directory'] . '/' . $filename,
             $infos['origin']
         );
@@ -195,7 +197,7 @@ class UploadController extends AbstractController
         $fs->mkdir($completePath);
 
         return $this->json([
-            'directory' => $this->fileInfosHelper->getInfos($infos['directory'] . '/' . $filename, $infos['origin'])
+            'directory' => $this->uploadedFileHelper->getUploadedFile($infos['directory'] . '/' . $filename, $infos['origin'])
         ]);
     }
 
@@ -210,14 +212,14 @@ class UploadController extends AbstractController
             throw new InformativeException(implode('\n', $violations), 415);
         }
 
-        $fileInfos = $fileHelper->uploadFile(
+        $uploadedFile = $fileHelper->uploadFile(
             $fileFromRequest,
             $destRelDir,
             $origin,
         );
 
         return $this->json([
-            'data' => $fileInfos
+            'data' => $uploadedFile
         ]);
     }
 
@@ -227,7 +229,7 @@ class UploadController extends AbstractController
 
         $destRelDir = $request->query->get('directory');
         $origin = $request->query->get('origin');
-        $tempId = $request->query->get('id');
+        $tempLiipId = $request->query->get('liipId');
 
         $uid = $request->query->get('resumableIdentifier');
         $tempDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $uid;
@@ -263,7 +265,7 @@ class UploadController extends AbstractController
         }
 
         try {
-            $fileInfos = $fileHelper->createFileFromChunks($tempDir, $filename, $totalSize, $totalChunks, $destRelDir, $origin);
+            $uploadedFile = $fileHelper->createFileFromChunks($tempDir, $filename, $totalSize, $totalChunks, $destRelDir, $origin);
         } catch (\Exception $err) {
             if ($err instanceof InformativeException) {
                 throw $err;
@@ -272,22 +274,15 @@ class UploadController extends AbstractController
             }
         }
 
-        if ($fileInfos) {
+        if ($uploadedFile) {
             return $this->json([
-                'file' => $fileInfos,
-                'oldId' => $tempId
+                'file' => $uploadedFile,
+                'oldLiipId' => $tempLiipId
             ]);
         } else {
             return $this->json([
                 'message' => $request->getMethod() === 'GET' ? 'chunk already exist' : 'chunk uploaded'
             ]);
         }
-
-
-
-
-        return $this->json([
-            'data' => $fileInfos
-        ]);
     }
 }

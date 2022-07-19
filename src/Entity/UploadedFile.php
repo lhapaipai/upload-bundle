@@ -17,9 +17,14 @@ class UploadedFile
     private $id;
 
     /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $liipId;
+
+    /**
      * @ORM\Column(type="string", length=64, nullable=true)
      */
-    private $type;
+    private $mimeGroup;
 
     /**
      * @ORM\Column(type="string", length=64, nullable=true)
@@ -51,6 +56,53 @@ class UploadedFile
      */
     private $origin;
 
+    /**
+     * @ORM\Column(type="integer", nullable=true)
+     */
+    private $imageWidth;
+
+    /**
+     * @ORM\Column(type="integer", nullable=true)
+     */
+    private $imageHeight;
+
+    /**
+     * @ORM\Column(type="string", length=20, nullable=true)
+     */
+    private $type;
+
+    /**
+     * @ORM\Column(type="integer", nullable=true)
+     */
+    private $size;
+
+    /**
+     * @ORM\Column(type="datetime", nullable=true)
+     */
+    private $createdAt;
+
+    /**
+     * @ORM\Column(type="string", length=64, nullable=true)
+     */
+    private $icon;
+
+    /**
+     * @ORM\Column(type="boolean", nullable=true)
+     */
+    private $isPublic;
+
+    private $absolutePath;
+
+    // chemin relatif par rapport aux origines définies dans pentatrion_upload.yaml
+    // ex: projet/mon-projet/fichier.jpg
+    public function getUploadRelativePath(): ?string
+    {
+        if (is_null($this->directory)) {
+            return $this->filename;
+        }
+        return $this->directory . DIRECTORY_SEPARATOR . $this->filename;
+    }
+
     public function isEmpty(): bool
     {
         return is_null($this->filename) && is_null($this->origin);
@@ -69,6 +121,18 @@ class UploadedFile
     public function setMimeType(?string $mimeType): self
     {
         $this->mimeType = $mimeType;
+
+        return $this;
+    }
+
+    public function getAbsolutePath(): ?string
+    {
+        return $this->absolutePath;
+    }
+
+    public function setAbsolutePath(?string $absolutePath): self
+    {
+        $this->absolutePath = $absolutePath;
 
         return $this;
     }
@@ -133,6 +197,54 @@ class UploadedFile
         return $this;
     }
 
+    public function getMimeGroup(): ?string
+    {
+        return $this->mimeGroup;
+    }
+
+    public function setMimeGroup(?string $mimeGroup): self
+    {
+        $this->mimeGroup = $mimeGroup;
+
+        return $this;
+    }
+
+    public function getLiipId(): ?string
+    {
+        return $this->liipId;
+    }
+
+    public function setLiipId(?string $liipId): self
+    {
+        $this->liipId = $liipId;
+
+        return $this;
+    }
+
+    public function getImageWidth(): ?int
+    {
+        return $this->imageWidth;
+    }
+
+    public function setImageWidth(?int $imageWidth): self
+    {
+        $this->imageWidth = $imageWidth;
+
+        return $this;
+    }
+
+    public function getImageHeight(): ?int
+    {
+        return $this->imageHeight;
+    }
+
+    public function setImageHeight(?int $imageHeight): self
+    {
+        $this->imageHeight = $imageHeight;
+
+        return $this;
+    }
+
     public function getType(): ?string
     {
         return $this->type;
@@ -141,6 +253,54 @@ class UploadedFile
     public function setType(?string $type): self
     {
         $this->type = $type;
+
+        return $this;
+    }
+
+    public function getSize(): ?int
+    {
+        return $this->size;
+    }
+
+    public function setSize(?int $size): self
+    {
+        $this->size = $size;
+
+        return $this;
+    }
+
+    public function getCreatedAt(): ?\DateTimeInterface
+    {
+        return $this->createdAt;
+    }
+
+    public function setCreatedAt(?\DateTimeInterface $createdAt): self
+    {
+        $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    public function getIcon(): ?string
+    {
+        return $this->icon;
+    }
+
+    public function setIcon(?string $icon): self
+    {
+        $this->icon = $icon;
+
+        return $this;
+    }
+
+    public function isIsPublic(): ?bool
+    {
+        return $this->isPublic;
+    }
+
+    public function setIsPublic(?bool $isPublic): self
+    {
+        $this->isPublic = $isPublic;
 
         return $this;
     }

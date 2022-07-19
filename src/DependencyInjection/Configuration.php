@@ -15,8 +15,8 @@ class Configuration implements ConfigurationInterface
         $rootNode
             ->fixXmlConfig('origin')
             ->children()
-            ->scalarNode('file_infos_helper')
-            ->defaultValue('pentatrion_upload.file_infos_helper')
+            ->scalarNode('uploaded_file_helper')
+            ->defaultValue('pentatrion_upload.uploaded_file_helper')
             ->end()
             ->scalarNode('file_manager_helper')
             ->defaultValue('pentatrion_upload.file_manager_helper')
