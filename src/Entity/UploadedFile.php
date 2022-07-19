@@ -32,16 +32,6 @@ class UploadedFile
     private $mimeType;
 
     /**
-     * @ORM\Column(type="integer", nullable=true)
-     */
-    private $width;
-
-    /**
-     * @ORM\Column(type="integer", nullable=true)
-     */
-    private $height;
-
-    /**
      * @ORM\Column(type="string", length=255, nullable=true)
      */
     private $filename;
@@ -89,7 +79,7 @@ class UploadedFile
     /**
      * @ORM\Column(type="boolean", nullable=true)
      */
-    private $isPublic;
+    private $public;
 
     private $absolutePath;
 
@@ -133,30 +123,6 @@ class UploadedFile
     public function setAbsolutePath(?string $absolutePath): self
     {
         $this->absolutePath = $absolutePath;
-
-        return $this;
-    }
-
-    public function getWidth(): ?int
-    {
-        return $this->width;
-    }
-
-    public function setWidth(?int $width): self
-    {
-        $this->width = $width;
-
-        return $this;
-    }
-
-    public function getHeight(): ?int
-    {
-        return $this->height;
-    }
-
-    public function setHeight(?int $height): self
-    {
-        $this->height = $height;
 
         return $this;
     }
@@ -293,14 +259,14 @@ class UploadedFile
         return $this;
     }
 
-    public function isIsPublic(): ?bool
+    public function isPublic(): ?bool
     {
-        return $this->isPublic;
+        return $this->public;
     }
 
-    public function setIsPublic(?bool $isPublic): self
+    public function setPublic(?bool $public): self
     {
-        $this->isPublic = $isPublic;
+        $this->public = $public;
 
         return $this;
     }

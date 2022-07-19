@@ -11,21 +11,25 @@ use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Mime\MimeTypes;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
 class TextFilePickerType extends AbstractType
 {
     private $fileManagerHelper;
     private $uploadedFileHelper;
     private $locale;
+    private $normalizer;
 
     public function __construct(
         FileManagerHelperInterface $fileManagerHelper,
         UploadedFileHelperInterface $uploadedFileHelper,
-        RequestStack $requestStack
+        RequestStack $requestStack,
+        NormalizerInterface $normalizer
     ) {
         $this->fileManagerHelper = $fileManagerHelper;
         $this->uploadedFileHelper = $uploadedFileHelper;
         $this->locale = $requestStack->getCurrentRequest()->getLocale();
+        $this->normalizer = $normalizer;
     }
 
     public function buildView(FormView $view, FormInterface $form, array $options): void
@@ -48,7 +52,7 @@ class TextFilePickerType extends AbstractType
 
         $view->vars['type'] = 'text';
         $view->vars['attr']['data-minifilemanager'] = json_encode($fileManagerConfig);
-        $view->vars['attr']['data-uploaded-files'] = json_encode($uploadedFiles);
+        $view->vars['attr']['data-uploaded-files'] = json_encode($this->normalizer->normalize($uploadedFiles));
         $view->vars['attr']['data-text-form-file-picker'] = 'true';
     }
 

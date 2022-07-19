@@ -15,36 +15,33 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage;
+use Symfony\Component\Security\Core\Security;
+use Symfony\Component\Serializer\Normalizer\NormalizableInterface;
+use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
+use Symfony\Contracts\Service\ServiceSubscriberInterface;
 
-class UploadController extends AbstractController
+class UploadController extends AbstractController implements ServiceSubscriberInterface
 {
     private $uploadedFileHelper;
+    private $security;
 
-    public function __construct(UploadedFileHelperInterface $uploadedFileHelper)
+    public function __construct(UploadedFileHelperInterface $uploadedFileHelper, Security $security)
     {
         $this->uploadedFileHelper = $uploadedFileHelper;
+        $this->security = $security;
     }
 
-    protected function isAdmin(): bool
-    {
-        $user = $this->getUser();
-        if ($user) {
-            return in_array('ROLE_ADMIN', $user->getRoles());
-        } else {
-            return false;
-        }
-    }
-
-    public function getFiles(Request $request): JsonResponse
+    public function getFiles(Request $request, NormalizerInterface $normalizer): JsonResponse
     {
         $directory = $request->request->get('directory');
         $origin = $request->request->get('origin');
 
-        return $this->json($this->uploadedFileHelper->getUploadedFilesFromDirectory(
+        return $this->json($normalizer->normalize($this->uploadedFileHelper->getUploadedFilesFromDirectory(
             $directory,
             $origin,
             true // with directory infos
-        ));
+        )));
     }
 
     public function showFile($mode, $origin, $uploadRelativePath, Request $request, UploadedFileHelperInterface $uploadedFileHelper): BinaryFileResponse
@@ -52,7 +49,7 @@ class UploadController extends AbstractController
         $uploadedFile = $uploadedFileHelper->getUploadedFile($uploadRelativePath, $origin);
         $absolutePath = $uploadedFileHelper->getAbsolutePath($uploadRelativePath, $origin);
 
-        if (!$this->uploadedFileHelper::hasGrantedAccess($uploadedFile, $this->getUser())) {
+        if (!$this->uploadedFileHelper::hasGrantedAccess($uploadedFile, $this->security->getUser())) {
             throw new InformativeException('Vous n\'avez pas les droits suffisants pour voir le contenu de ce fichier !!', 403);
         }
 
@@ -69,9 +66,9 @@ class UploadController extends AbstractController
 
     public function downloadFile(Request $request, UploadedFileHelperInterface $uploadedFileHelper): BinaryFileResponse
     {
-        $liipIds = $request->request->get('files');
+        $liipIds = $request->request->all()['files'];
         $files = [];
-        $user = $this->getUser();
+        $user = $this->security->getUser();
 
         if (count($liipIds) < 0) {
             throw new InformativeException('Erreur dans la requête, aucun fichier sélectionné', 404);
@@ -91,7 +88,7 @@ class UploadController extends AbstractController
         return $this->file($archiveTempPath, 'archive.zip');
     }
 
-    public function editFileRequest(Request $request): JsonResponse
+    public function editFileRequest(Request $request, NormalizerInterface $normalizer): JsonResponse
     {
         $infos = $request->request->all();
         $readOnly = $request->request->getBoolean('readOnly');
@@ -115,7 +112,7 @@ class UploadController extends AbstractController
         $newRelativePath = $infos['directory'] . '/' . $newFilename;
         $newCompletePath = $this->uploadedFileHelper->getAbsolutePath($newRelativePath, $infos['origin']);
 
-        if ($this->isAdmin() || !$readOnly) {
+        if (!$readOnly) {
             $fs = new Filesystem();
             $fs->rename($oldCompletePath, $newCompletePath);
         } else {
@@ -123,11 +120,11 @@ class UploadController extends AbstractController
         }
 
         return $this->json([
-            'file' => $this->uploadedFileHelper->getUploadedFile($newRelativePath, $infos['origin'])
+            'file' => $normalizer->normalize($this->uploadedFileHelper->getUploadedFile($newRelativePath, $infos['origin']))
         ]);
     }
 
-    public function cropFile(Request $request, FileHelper $fileHelper): JsonResponse
+    public function cropFile(Request $request, FileHelper $fileHelper, NormalizerInterface $normalizer): JsonResponse
     {
         $uploadRelativePath = $request->request->get('uploadRelativePath');
         $origin = $request->request->get('origin');
@@ -149,19 +146,19 @@ class UploadController extends AbstractController
         $fileHelper->cropImage($uploadRelativePath, $origin, $x, $y, $width, $height, $finalWidth, $finalHeight, $angle);
 
         return $this->json([
-            'file' => $this->uploadedFileHelper->getUploadedFile($uploadRelativePath, $origin)
+            'file' => $normalizer->normalize($this->uploadedFileHelper->getUploadedFile($uploadRelativePath, $origin))
         ]);
     }
 
     public function deleteFile(Request $request, FileHelper $fileHelper): JsonResponse
     {
-        $liipIds = $request->request->get('files');
+        $liipIds = $request->request->all()['files'];
         $errors = [];
 
         foreach ($liipIds as $liipId) {
 
             $uploadedFile = $this->uploadedFileHelper->getUploadedFileByLiipId($liipId);
-            if (!$this->uploadedFileHelper::hasGrantedAccess($uploadedFile, $this->getUser())) {
+            if (!$this->uploadedFileHelper::hasGrantedAccess($uploadedFile, $this->security->getUser())) {
                 $errors[] = $uploadedFile->getFilename();
             } else {
                 $fileHelper->delete($uploadedFile->getUploadRelativePath(), $uploadedFile->getOrigin());
@@ -180,7 +177,7 @@ class UploadController extends AbstractController
     /**
      * @Route("/add-directory", name="media_add_directory")
      */
-    public function addDirectory(Request $request, FileHelper $fileHelper): JsonResponse
+    public function addDirectory(Request $request, NormalizerInterface $normalizer): JsonResponse
     {
         $infos = $request->request->all();
 
@@ -197,11 +194,11 @@ class UploadController extends AbstractController
         $fs->mkdir($completePath);
 
         return $this->json([
-            'directory' => $this->uploadedFileHelper->getUploadedFile($infos['directory'] . '/' . $filename, $infos['origin'])
+            'directory' => $normalizer->normalize($this->uploadedFileHelper->getUploadedFile($infos['directory'] . '/' . $filename, $infos['origin']))
         ]);
     }
 
-    public function uploadFile(FileHelper $fileHelper, Request $request): JsonResponse
+    public function uploadFile(FileHelper $fileHelper, Request $request, NormalizerInterface $normalizer): JsonResponse
     {
         $fileFromRequest = $request->files->get('file');
         $destRelDir = $request->request->get('directory');
@@ -219,11 +216,11 @@ class UploadController extends AbstractController
         );
 
         return $this->json([
-            'data' => $uploadedFile
+            'data' => $normalizer->normalize($uploadedFile)
         ]);
     }
 
-    public function chunkFile(FileHelper $fileHelper, Request $request): JsonResponse
+    public function chunkFile(FileHelper $fileHelper, Request $request, NormalizerInterface $normalizer): JsonResponse
     {
         $fs = new Filesystem();
 
@@ -276,7 +273,7 @@ class UploadController extends AbstractController
 
         if ($uploadedFile) {
             return $this->json([
-                'file' => $uploadedFile,
+                'file' => $normalizer->normalize($uploadedFile),
                 'oldLiipId' => $tempLiipId
             ]);
         } else {

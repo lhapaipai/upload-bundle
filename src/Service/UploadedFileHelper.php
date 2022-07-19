@@ -202,7 +202,7 @@ class UploadedFileHelper implements UploadedFileHelperInterface, ServiceSubscrib
             ->setSize($file->getSize())
             ->setCreatedAt((new \DateTime())->setTimestamp($file->getCTime()))
             ->setIcon($icon)
-            ->setIsPublic($this->isOriginPublic($originName));
+            ->setPublic($this->isOriginPublic($originName));
 
         return $uploadedFile;
     }

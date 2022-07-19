@@ -37,6 +37,7 @@ services:
       $fileManagerHelper: '@Pentatrion\UploadBundle\Service\FileManagerHelperInterface'
       $uploadedFileHelper: '@Pentatrion\UploadBundle\Service\UploadedFileHelperInterface'
       $requestStack: '@request_stack'
+      $normalizer: '@serializer'
     tags: ["form.type"]
 
   Pentatrion\UploadBundle\Form\EntityFilePickerType:
@@ -77,5 +78,6 @@ services:
     tags: ["controller.service_arguments"]
     arguments:
       $uploadedFileHelper: '@Pentatrion\UploadBundle\Service\UploadedFileHelperInterface'
+      $security: '@Symfony\Component\Security\Core\Security'
     calls:
       - [setContainer, ["@service_container"]]

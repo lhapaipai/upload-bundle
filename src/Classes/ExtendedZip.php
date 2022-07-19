@@ -58,7 +58,7 @@ class ExtendedZip extends ZipArchive
 
         $archiveTempPath = sys_get_temp_dir() . '/archive-' . uniqid() . '.zip';
 
-        if (count($files) === 1 && $firstFile['type'] === 'dir') {
+        if (count($files) === 1 && $firstFile->getType() === 'dir') {
             ExtendedZip::zipTree($firstFile->getAbsolutePath(), $archiveTempPath, \ZipArchive::CREATE);
         } else {
 

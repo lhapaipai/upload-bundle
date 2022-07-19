@@ -1,11 +1,45 @@
 {% use "form_div_layout.html.twig" %}
 
-{%- block file_picker_widget -%}
-{%- set attr = attr|merge({
-class: (attr.class|default('') ~ ' file-picker')|trim,
-'data-files': files,
-'data-minifilemanager': filemanager_config,
-'data-formpreview': formpreview_config
-}) -%}
-{{- block('form_widget_simple') -}}
+
+{%- block uploaded_file_label -%}
+{%- endblock uploaded_file_label -%}
+
+{%- block entities_file_picker_widget -%}
+    {% if prototype is defined and not prototype.rendered %}
+        {%- set attr = attr|merge({'data-prototype': form_row(prototype) }) -%}
+    {% endif %}
+    {{- block('form_widget') -}}
+{%- endblock -%}
+
+{%- block entities_file_picker_label -%}
+    {{- block('form_label') -}}
+{%- endblock -%}
+
+{%- block entity_file_picker_widget -%}
+    {% if prototype is defined and not prototype.rendered %}
+        {%- set attr = attr|merge({'data-prototype': form_row(prototype) }) -%}
+    {% endif %}
+    <div {{ block('widget_container_attributes') }}>
+        {%- if form is rootform -%}
+            {{ form_errors(form) }}
+        {%- endif -%}
+        {{- form_widget(form.liipId) -}}
+        {{- form_widget(form.mimeGroup) -}}
+        {{- form_widget(form.mimeType) -}}
+        {{- form_widget(form.filename) -}}
+        {{- form_widget(form.directory) -}}
+        {{- form_widget(form.origin) -}}
+        {{- form_widget(form.imageWidth) -}}
+        {{- form_widget(form.imageHeight) -}}
+        {{- form_widget(form.type) -}}
+        {{- form_widget(form.size) -}}
+        {{- form_widget(form.createdAt) -}}
+        {{- form_widget(form.icon) -}}
+        {{- form_widget(form.public) -}}
+        {{- form_rest(form) -}}
+    </div>
+{%- endblock -%}
+
+{%- block entity_file_picker_label -%}
+    {{- block('form_label') -}}
 {%- endblock -%}
