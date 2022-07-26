@@ -9,6 +9,7 @@ use Liip\ImagineBundle\Imagine\Cache\CacheManager;
 use Pentatrion\UploadBundle\Exception\InformativeException;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Finder\Finder;
 use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Validator\Constraints\NotBlank;
@@ -21,11 +22,35 @@ class FileHelper implements ServiceSubscriberInterface
 {
     private $container;
     private $uploadedFileHelper;
+    private $publicUploadsOrigin;
+    private $liipCacheDir;
 
-    public function __construct(UploadedFileHelperInterface $uploadedFileHelper, ContainerInterface $container)
-    {
+    public function __construct(
+        $uploadOrigins,
+        $webRootDir,
+        UploadedFileHelperInterface $uploadedFileHelper,
+        ContainerInterface $container
+    ) {
         $this->container = $container;
         $this->uploadedFileHelper = $uploadedFileHelper;
+        $this->publicUploadsOrigin = $uploadOrigins['public_uploads'];
+        $this->liipCacheDir = $webRootDir . '/media';
+    }
+
+    public function purgeUploadsDirectory()
+    {
+        $finder = new Finder();
+        $fs = new Filesystem();
+
+        $finder->in($this->publicUploadsOrigin['path'])->depth('== 0');
+        foreach ($finder as $file) {
+            $fs->remove($file);
+        }
+
+        $finder->in($this->liipCacheDir)->depth('== 0');
+        foreach ($finder as $file) {
+            $fs->remove($file);
+        }
     }
 
     public function sanitizeFilename($filename, $dir, $options = []): ?string

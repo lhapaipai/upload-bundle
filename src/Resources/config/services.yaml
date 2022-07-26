@@ -58,6 +58,8 @@ services:
   pentatrion_upload.file_helper:
     class: Pentatrion\UploadBundle\Service\FileHelper
     arguments:
+      $uploadOrigins: "%pentatrion_upload.origins%"
+      $webRootDir: "%kernel.project_dir%/public"
       $container: '@Psr\Container\ContainerInterface'
       $uploadedFileHelper: '@Pentatrion\UploadBundle\Service\UploadedFileHelperInterface'
     tags: ["container.service_subscriber"]
