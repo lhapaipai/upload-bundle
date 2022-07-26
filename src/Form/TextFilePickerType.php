@@ -50,7 +50,7 @@ class TextFilePickerType extends AbstractType
             }
         }
 
-        $view->vars['type'] = 'text';
+        $view->vars['type'] = 'hidden';
         $view->vars['attr']['data-minifilemanager'] = json_encode($fileManagerConfig);
         $view->vars['attr']['data-uploaded-files'] = json_encode($this->normalizer->normalize($uploadedFiles));
         $view->vars['attr']['data-text-form-file-picker'] = 'true';

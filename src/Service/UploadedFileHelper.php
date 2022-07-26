@@ -155,7 +155,7 @@ class UploadedFileHelper implements UploadedFileHelperInterface, ServiceSubscrib
         return $uploadedFile;
     }
 
-    public function getUploadedFile($uploadRelativePath, $originName = null): UploadedFile
+    public function getUploadedFile($uploadRelativePath, $originName = null): ?UploadedFile
     {
         $absolutePath = $this->getAbsolutePath($uploadRelativePath, $originName);
         if (!file_exists($absolutePath)) {
