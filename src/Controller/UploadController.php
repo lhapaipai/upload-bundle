@@ -12,12 +12,9 @@ use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage;
 use Symfony\Component\Security\Core\Security;
-use Symfony\Component\Serializer\Normalizer\NormalizableInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use Symfony\Contracts\Service\ServiceSubscriberInterface;
 
@@ -36,10 +33,12 @@ class UploadController extends AbstractController implements ServiceSubscriberIn
     {
         $directory = $request->request->get('directory');
         $origin = $request->request->get('origin');
+        $mimeGroup = $request->request->get('mimeGroup');
 
         return $this->json($normalizer->normalize($this->uploadedFileHelper->getUploadedFilesFromDirectory(
             $directory,
             $origin,
+            $mimeGroup,
             true // with directory infos
         )));
     }
@@ -53,14 +52,15 @@ class UploadController extends AbstractController implements ServiceSubscriberIn
             throw new InformativeException('Vous n\'avez pas les droits suffisants pour voir le contenu de ce fichier !!', 403);
         }
 
-        $disposition = $mode === 'show' ? ResponseHeaderBag::DISPOSITION_INLINE : ResponseHeaderBag::DISPOSITION_ATTACHMENT;
+        $disposition = 'show' === $mode ? ResponseHeaderBag::DISPOSITION_INLINE : ResponseHeaderBag::DISPOSITION_ATTACHMENT;
 
         $response = $this->file($absolutePath, null, $disposition);
 
         // bug sinon cela télécharge l'image au lieu de l'afficher !
-        if ($response->getFile()->getMimeType() === 'image/svg') {
+        if ('image/svg' === $response->getFile()->getMimeType()) {
             $response->headers->set('Content-Type', 'image/svg+xml');
         }
+
         return $response;
     }
 
@@ -85,6 +85,7 @@ class UploadController extends AbstractController implements ServiceSubscriberIn
         }
 
         $archiveTempPath = ExtendedZip::createArchiveFromFiles($files);
+
         return $this->file($archiveTempPath, 'archive.zip');
     }
 
@@ -93,34 +94,33 @@ class UploadController extends AbstractController implements ServiceSubscriberIn
         $infos = $request->request->all();
         $readOnly = $request->request->getBoolean('readOnly');
 
-        if (is_null($infos['newFilename']) || empty($infos['newFilename']) || $infos['newFilename'][0] === '.') {
+        if (is_null($infos['newFilename']) || empty($infos['newFilename']) || '.' === $infos['newFilename'][0]) {
             throw new InformativeException('Le nom de fichier n\'est pas valide', 401);
         }
 
         $extension = strtolower(pathinfo($infos['newFilename'], PATHINFO_EXTENSION));
         $filenameWithoutExtension = pathinfo($infos['newFilename'], PATHINFO_FILENAME);
 
-
         $newFilename = Urlizer::urlize($filenameWithoutExtension);
 
-        if ($extension !== "") {
+        if ('' !== $extension) {
             $newFilename .= ".$extension";
         }
 
         $oldCompletePath = $this->uploadedFileHelper->getAbsolutePath($infos['uploadRelativePath'], $infos['origin']);
 
-        $newRelativePath = $infos['directory'] . '/' . $newFilename;
+        $newRelativePath = $infos['directory'].'/'.$newFilename;
         $newCompletePath = $this->uploadedFileHelper->getAbsolutePath($newRelativePath, $infos['origin']);
 
         if (!$readOnly) {
             $fs = new Filesystem();
             $fs->rename($oldCompletePath, $newCompletePath);
         } else {
-            throw new InformativeException('Impossible de renommer le fichier : ' . $infos['filename'] . ' car vous n\'avez pas les droits nécessaires.', 401);
+            throw new InformativeException('Impossible de renommer le fichier : '.$infos['filename'].' car vous n\'avez pas les droits nécessaires.', 401);
         }
 
         return $this->json([
-            'file' => $normalizer->normalize($this->uploadedFileHelper->getUploadedFile($newRelativePath, $infos['origin']))
+            'file' => $normalizer->normalize($this->uploadedFileHelper->getUploadedFile($newRelativePath, $infos['origin'])),
         ]);
     }
 
@@ -146,7 +146,7 @@ class UploadController extends AbstractController implements ServiceSubscriberIn
         $fileHelper->cropImage($uploadRelativePath, $origin, $x, $y, $width, $height, $finalWidth, $finalHeight, $angle);
 
         return $this->json([
-            'file' => $normalizer->normalize($this->uploadedFileHelper->getUploadedFile($uploadRelativePath, $origin))
+            'file' => $normalizer->normalize($this->uploadedFileHelper->getUploadedFile($uploadRelativePath, $origin)),
         ]);
     }
 
@@ -156,7 +156,6 @@ class UploadController extends AbstractController implements ServiceSubscriberIn
         $errors = [];
 
         foreach ($liipIds as $liipId) {
-
             $uploadedFile = $this->uploadedFileHelper->getUploadedFileByLiipId($liipId);
             if (!$this->uploadedFileHelper::hasGrantedAccess($uploadedFile, $this->security->getUser())) {
                 $errors[] = $uploadedFile->getFilename();
@@ -165,12 +164,12 @@ class UploadController extends AbstractController implements ServiceSubscriberIn
             }
         }
 
-        if (count($errors) != 0) {
-            throw new InformativeException('Impossible de supprimer le(s) fichier(s) : ' . implode(', ', $errors) . ' car vous n\'avez pas les droits suffisants.', 401);
+        if (0 != count($errors)) {
+            throw new InformativeException('Impossible de supprimer le(s) fichier(s) : '.implode(', ', $errors).' car vous n\'avez pas les droits suffisants.', 401);
         }
 
         return $this->json([
-            'success' => true
+            'success' => true,
         ]);
     }
 
@@ -186,7 +185,7 @@ class UploadController extends AbstractController implements ServiceSubscriberIn
             throw new InformativeException('Le nom du dossier est trop long.', 500);
         }
         $completePath = $this->uploadedFileHelper->getAbsolutePath(
-            $infos['directory'] . '/' . $filename,
+            $infos['directory'].'/'.$filename,
             $infos['origin']
         );
 
@@ -194,7 +193,7 @@ class UploadController extends AbstractController implements ServiceSubscriberIn
         $fs->mkdir($completePath);
 
         return $this->json([
-            'directory' => $normalizer->normalize($this->uploadedFileHelper->getUploadedFile($infos['directory'] . '/' . $filename, $infos['origin']))
+            'directory' => $normalizer->normalize($this->uploadedFileHelper->getUploadedFile($infos['directory'].'/'.$filename, $infos['origin'])),
         ]);
     }
 
@@ -216,7 +215,7 @@ class UploadController extends AbstractController implements ServiceSubscriberIn
         );
 
         return $this->json([
-            'data' => $normalizer->normalize($uploadedFile)
+            'data' => $normalizer->normalize($uploadedFile),
         ]);
     }
 
@@ -229,25 +228,24 @@ class UploadController extends AbstractController implements ServiceSubscriberIn
         $tempLiipId = $request->query->get('liipId');
 
         $uid = $request->query->get('resumableIdentifier');
-        $tempDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $uid;
+        $tempDir = sys_get_temp_dir().DIRECTORY_SEPARATOR.$uid;
 
         $filename = $request->query->get('resumableFilename');
         $totalSize = $request->query->getInt('resumableTotalSize');
         $totalChunks = $request->query->getInt('resumableTotalChunks');
 
-        $chunkFilename = 'chunk.part' . $request->query->getInt('resumableChunkNumber');
+        $chunkFilename = 'chunk.part'.$request->query->getInt('resumableChunkNumber');
 
         // on teste simplement si la portion de fichier a déjà été uploadée.
-        if ($request->getMethod() === 'GET') {
-            $chunkPath = $tempDir . DIRECTORY_SEPARATOR . $chunkFilename;
+        if ('GET' === $request->getMethod()) {
+            $chunkPath = $tempDir.DIRECTORY_SEPARATOR.$chunkFilename;
 
             // le fichier n'existe pas on signale qu'il faudra donc l'uploader.
             if (!$fs->exists($chunkPath)) {
                 return new JsonResponse('', 204);
             }
-            // le fichier existe, on vérifiera comme lors d'un upload si on ne peut pas
-            // déjà assembler le fichier
-
+        // le fichier existe, on vérifiera comme lors d'un upload si on ne peut pas
+        // déjà assembler le fichier
         } else {
             // on upload la portion de fichier.
             $fileFromRequest = $request->files->get('file');
@@ -257,7 +255,7 @@ class UploadController extends AbstractController implements ServiceSubscriberIn
                 // }
                 $fileHelper->uploadChunkFile($fileFromRequest, $tempDir, $chunkFilename);
             } catch (\Exception $err) {
-                throw new InformativeException("Impossible de copier le fragment", 500);
+                throw new InformativeException('Impossible de copier le fragment', 500);
             }
         }
 
@@ -274,11 +272,11 @@ class UploadController extends AbstractController implements ServiceSubscriberIn
         if ($uploadedFile) {
             return $this->json([
                 'file' => $normalizer->normalize($uploadedFile),
-                'oldLiipId' => $tempLiipId
+                'oldLiipId' => $tempLiipId,
             ]);
         } else {
             return $this->json([
-                'message' => $request->getMethod() === 'GET' ? 'chunk already exist' : 'chunk uploaded'
+                'message' => 'GET' === $request->getMethod() ? 'chunk already exist' : 'chunk uploaded',
             ]);
         }
     }

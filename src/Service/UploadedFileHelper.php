@@ -2,7 +2,6 @@
 
 namespace Pentatrion\UploadBundle\Service;
 
-use Exception;
 use Liip\ImagineBundle\Imagine\Cache\CacheManager;
 use Liip\ImagineBundle\Imagine\Data\DataManager;
 use Liip\ImagineBundle\Imagine\Filter\FilterManager;
@@ -14,8 +13,8 @@ use Symfony\Component\Finder\Finder;
 use Symfony\Component\Mime\MimeTypes;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RouterInterface;
-use Symfony\Contracts\Service\ServiceSubscriberInterface;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Contracts\Service\ServiceSubscriberInterface;
 
 class UploadedFileHelper implements UploadedFileHelperInterface, ServiceSubscriberInterface
 {
@@ -31,12 +30,12 @@ class UploadedFileHelper implements UploadedFileHelperInterface, ServiceSubscrib
     public static function getSubscribedServices(): array
     {
         return [
-            'cache.manager' => '?' . CacheManager::class,
-            'data.manager'  => '?' . DataManager::class,
-            'filter.manager' => '?' . FilterManager::class,
+            'cache.manager' => '?'.CacheManager::class,
+            'data.manager' => '?'.DataManager::class,
+            'filter.manager' => '?'.FilterManager::class,
             'router' => RouterInterface::class,
-            'serializer' => '?' . SerializerInterface::class,
-            'resolver.app' => '?' . AbsoluteWebPathResolver::class
+            'serializer' => '?'.SerializerInterface::class,
+            'resolver.app' => '?'.AbsoluteWebPathResolver::class,
         ];
     }
 
@@ -56,8 +55,9 @@ class UploadedFileHelper implements UploadedFileHelperInterface, ServiceSubscrib
     public function getAbsolutePath($uploadRelativePath = '', $originName = null): string
     {
         $originName = $originName ?? $this->defaultOriginName;
-        $suffix = $uploadRelativePath !== '' ? '/' . $uploadRelativePath : '';
-        return $this->origins[$originName]['path'] . $suffix;
+        $suffix = '' !== $uploadRelativePath ? '/'.$uploadRelativePath : '';
+
+        return $this->origins[$originName]['path'].$suffix;
     }
 
     // renvoie un chemin web absolu si le fichier est public.
@@ -69,37 +69,41 @@ class UploadedFileHelper implements UploadedFileHelperInterface, ServiceSubscrib
             return $this->container->get('router')->generate('file_manager_endpoint_media_show_file', [
                 'mode' => 'show',
                 'origin' => $originName,
-                'uploadRelativePath' => $uploadRelativePath
+                'uploadRelativePath' => $uploadRelativePath,
             ]);
         }
-        return $this->origins[$originName]['web_prefix'] . '/' . $uploadRelativePath;
+
+        return $this->origins[$originName]['web_prefix'].'/'.$uploadRelativePath;
     }
 
     public function getLiipPath($uploadRelativePath, $originName = null): string
     {
         $originName = $originName ?? $this->defaultOriginName;
-        return $this->origins[$originName]['liip_path'] . '/' . $uploadRelativePath;
+
+        return $this->origins[$originName]['liip_path'].'/'.$uploadRelativePath;
     }
 
     // renvoie un identifiant pour liipImagine.
     public function getLiipId($uploadRelativePath, $originName = null): string
     {
         $originName = $originName ?? $this->defaultOriginName;
+
         return "@$originName:$uploadRelativePath";
     }
 
     public function parseLiipId($liipId): array
     {
         $str = substr($liipId, 1);
-        $firstColon = strpos($str, ":");
+        $firstColon = strpos($str, ':');
         $origin = substr($str, 0, $firstColon);
         $uploadRelativePath = substr($str, $firstColon + 1);
+
         return [$uploadRelativePath, $origin];
     }
 
     /**
-     * @return string | null 
-     * 
+     * @return string|null
+     *
      * à partir d'un webPath retrouve l'url de son miniature
      */
     public function getUrlThumbnail($liipPath, $filter, $pregenerate = false, $withTimeStamp = true, array $runtimeConfig = [])
@@ -114,7 +118,7 @@ class UploadedFileHelper implements UploadedFileHelperInterface, ServiceSubscrib
         }
 
         if ($withTimeStamp) {
-            $suffix = '?' . time();
+            $suffix = '?'.time();
         } else {
             $suffix = '';
         }
@@ -134,15 +138,17 @@ class UploadedFileHelper implements UploadedFileHelperInterface, ServiceSubscrib
                     $filter
                 );
             }
-            return $cacheManager->resolve($liipPath, $filter) . $suffix;
+
+            return $cacheManager->resolve($liipPath, $filter).$suffix;
         } else {
-            return $cacheManager->getBrowserPath($liipPath, $filter, $runtimeConfig, null, UrlGeneratorInterface::ABSOLUTE_PATH) . $suffix;
+            return $cacheManager->getBrowserPath($liipPath, $filter, $runtimeConfig, null, UrlGeneratorInterface::ABSOLUTE_PATH).$suffix;
         }
     }
 
     public function getUploadedFileByLiipId($liipId): UploadedFile
     {
         list($uploadRelativePath, $origin) = $this->parseLiipId($liipId);
+
         return $this->getUploadedFile($uploadRelativePath, $origin);
     }
 
@@ -165,7 +171,7 @@ class UploadedFileHelper implements UploadedFileHelperInterface, ServiceSubscrib
         $file = new \SplFileInfo($absolutePath);
 
         $lastSlash = strrpos($uploadRelativePath, '/');
-        if ($lastSlash === false) {
+        if (false === $lastSlash) {
             $directory = '';
         } else {
             $directory = substr($uploadRelativePath, 0, $lastSlash);
@@ -181,7 +187,7 @@ class UploadedFileHelper implements UploadedFileHelperInterface, ServiceSubscrib
             $webPath = $this->getWebPath($uploadRelativePath, $originName);
         }
 
-        if ($mimeGroup === 'image' && $mimeType !== "image/svg" && $mimeType !== 'image/svg+xml') {
+        if ('image' === $mimeGroup && 'image/svg' !== $mimeType && 'image/svg+xml' !== $mimeType) {
             list($imageWidth, $imageHeight) = getimagesize($absolutePath);
         } else {
             $imageWidth = $imageHeight = null;
@@ -207,7 +213,7 @@ class UploadedFileHelper implements UploadedFileHelperInterface, ServiceSubscrib
         return $uploadedFile;
     }
 
-    public function getUploadedFilesFromDirectory($uploadDirectory, $originName = null, $withDirectoryInfos = false): array
+    public function getUploadedFilesFromDirectory($uploadDirectory, $originName = null, $mimeGroup = null, $withDirectoryInfos = false): array
     {
         $finder = (new Finder())->sortByType()->depth('== 0');
 
@@ -223,30 +229,44 @@ class UploadedFileHelper implements UploadedFileHelperInterface, ServiceSubscrib
         }
 
         $files = [];
-        $finder->in($absPath);
+
+        $filter = function (\SplFileInfo $file) use ($mimeGroup) {
+            if ($file->isDir() || is_null($mimeGroup)) {
+                return true;
+            }
+            $mimeType = MimeTypes::getDefault()->guessMimeType($file->getPathname());
+            $fileMimeGroup = explode('/', $mimeType)[0];
+
+            return $fileMimeGroup === $mimeGroup;
+        };
+
+        $finder->in($absPath)->filter($filter);
         foreach ($finder as $file) {
             $files[] = $this->getUploadedFileFromFileObj($file);
         }
         $data = [
-            'files' => $files
+            'files' => $files,
         ];
         if ($withDirectoryInfos) {
             $data['directory'] = $this->getUploadedFile($uploadDirectory, $originName);
         }
 
         $data = $this->addAdditionalInfosToDirectoryFiles($data);
+
         return $data;
     }
 
     public function hydrateFileWithAbsolutePath($fileInfos): array
     {
         $fileInfos['absolutePath'] = $this->getAbsolutePath($fileInfos['uploadRelativePath'], $fileInfos['origin']);
+
         return $fileInfos;
     }
 
     public function eraseSensibleInformations($fileInfos): array
     {
         unset($fileInfos['absolutePath']);
+
         return $fileInfos;
     }
 
@@ -257,7 +277,7 @@ class UploadedFileHelper implements UploadedFileHelperInterface, ServiceSubscrib
         $currentOrigin = null;
         $originKey = null;
         foreach ($this->origins as $key => $origin) {
-            if (strpos($absolutePath, $origin['path']) === 0) {
+            if (0 === strpos($absolutePath, $origin['path'])) {
                 $hasOrigin = true;
                 $currentOrigin = $origin;
                 $originKey = $key;
@@ -279,9 +299,9 @@ class UploadedFileHelper implements UploadedFileHelperInterface, ServiceSubscrib
         if (!isset($_SERVER['REQUEST_SCHEME'])) {
             return '';
         }
-        return $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['SERVER_NAME'];
-    }
 
+        return $_SERVER['REQUEST_SCHEME'].'://'.$_SERVER['SERVER_NAME'];
+    }
 
     public function addAdditionalInfosToDirectoryFiles(&$data): array
     {
@@ -305,10 +325,11 @@ class UploadedFileHelper implements UploadedFileHelperInterface, ServiceSubscrib
         }
         $sz = ' KMGTP';
         $factor = floor((strlen($size) - 1) / 3);
-        if ($factor == 0) {
-            return sprintf("%.0f octets", $size);
+        if (0 == $factor) {
+            return sprintf('%.0f octets', $size);
         }
-        return sprintf("%.1f ", $size / pow(1024, $factor)) . @$sz[$factor] . 'o';
+
+        return sprintf('%.1f ', $size / pow(1024, $factor)).@$sz[$factor].'o';
     }
 
     public static function getIconByMimeType($mimeType): string
@@ -334,6 +355,7 @@ class UploadedFileHelper implements UploadedFileHelperInterface, ServiceSubscrib
                     default:
                         return 'image.svg';
                 }
+                // no break
             case 'video':
                 return 'video-x-generic.svg';
             case 'audio':
@@ -364,6 +386,7 @@ class UploadedFileHelper implements UploadedFileHelperInterface, ServiceSubscrib
                     default:
                         return 'application-vnd.appimage.svg';
                 }
+                // no break
             case 'text':
                 switch ($mimeTypeExploded[1]) {
                     case 'x-php':
@@ -380,6 +403,7 @@ class UploadedFileHelper implements UploadedFileHelperInterface, ServiceSubscrib
                     default:
                         return 'text.svg';
                 }
+
                 return 'text-x-script.png';
                 break;
             default:
