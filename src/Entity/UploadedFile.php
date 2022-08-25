@@ -69,7 +69,7 @@ class UploadedFile
     /**
      * @ORM\Column(type="datetime", nullable=true)
      */
-    private $createdAt;
+    private $updatedAt;
 
     /**
      * @ORM\Column(type="string", length=64, nullable=true)
@@ -90,7 +90,8 @@ class UploadedFile
         if (is_null($this->directory)) {
             return $this->filename;
         }
-        return $this->directory . DIRECTORY_SEPARATOR . $this->filename;
+
+        return $this->directory.DIRECTORY_SEPARATOR.$this->filename;
     }
 
     public function isEmpty(): bool
@@ -235,14 +236,14 @@ class UploadedFile
         return $this;
     }
 
-    public function getCreatedAt(): ?\DateTimeInterface
+    public function getUpdatedAt(): ?\DateTimeInterface
     {
-        return $this->createdAt;
+        return $this->updatedAt;
     }
 
-    public function setCreatedAt(?\DateTimeInterface $createdAt): self
+    public function setUpdatedAt(?\DateTimeInterface $updatedAt): self
     {
-        $this->createdAt = $createdAt;
+        $this->updatedAt = $updatedAt;
 
         return $this;
     }
