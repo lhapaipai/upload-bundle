@@ -5,7 +5,6 @@ namespace Pentatrion\UploadBundle\Form;
 use Pentatrion\UploadBundle\Entity\UploadedFile;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\DataTransformer\DateTimeToStringTransformer;
-use Symfony\Component\Form\Extension\Core\DataTransformer\DateTimeZoneToStringTransformer;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -16,52 +15,52 @@ class UploadedFileType extends AbstractType
     {
         $builder
             ->add('liipId', HiddenType::class, [
-                'required' => false
+                'required' => false,
             ])
             ->add('mimeGroup', HiddenType::class, [
-                'required' => false
+                'required' => false,
             ])
             ->add('mimeType', HiddenType::class, [
-                'required' => false
+                'required' => false,
             ])
             ->add('filename', HiddenType::class, [
-                'required' => false
+                'required' => false,
             ])
             ->add('directory', HiddenType::class, [
-                'required' => false
+                'required' => false,
             ])
             ->add('origin', HiddenType::class, [
-                'required' => false
+                'required' => false,
             ])
             ->add('imageWidth', HiddenType::class, [
-                'required' => false
+                'required' => false,
             ])
             ->add('imageHeight', HiddenType::class, [
-                'required' => false
+                'required' => false,
             ])
             ->add('type', HiddenType::class, [
-                'required' => false
+                'required' => false,
             ])
             ->add('size', HiddenType::class, [
-                'required' => false
+                'required' => false,
             ])
-            ->add('createdAt', HiddenType::class, [
-                'required' => false
+            ->add('updatedAt', HiddenType::class, [
+                'required' => false,
             ])
             ->add('icon', HiddenType::class, [
-                'required' => false
+                'required' => false,
             ])
             ->add('public', HiddenType::class, [
-                'required' => false
+                'required' => false,
             ]);
 
-        $builder->get('createdAt')->addModelTransformer(new DateTimeToStringTransformer(null, null, 'Y-m-d\TH:i:sT'));
+        $builder->get('updatedAt')->addModelTransformer(new DateTimeToStringTransformer(null, null, 'Y-m-d\TH:i:sT'));
     }
 
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
-            'data_class' => UploadedFile::class
+            'data_class' => UploadedFile::class,
         ]);
     }
 }
