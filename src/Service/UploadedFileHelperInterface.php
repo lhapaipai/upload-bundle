@@ -30,12 +30,6 @@ interface UploadedFileHelperInterface
 
     public function eraseSensibleInformations(array $fileInfos);
 
-    public function getUploadedFileFromFileObj(\SplFileInfo $file);
-
-    public static function getHumanSize(int $size);
-
-    public static function getIconByMimeType(string $mimeType);
-
     public static function hasGrantedAccess(UploadedFile $uploadedFile, $user);
 
     public function addAdditionalInfos(&$infos);

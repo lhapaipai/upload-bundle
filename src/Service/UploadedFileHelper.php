@@ -5,6 +5,7 @@ namespace Pentatrion\UploadBundle\Service;
 use Liip\ImagineBundle\Imagine\Cache\CacheManager;
 use Liip\ImagineBundle\Imagine\Data\DataManager;
 use Liip\ImagineBundle\Imagine\Filter\FilterManager;
+use Pentatrion\UploadBundle\Classes\MimeType;
 use Pentatrion\UploadBundle\Entity\UploadedFile;
 use Pentatrion\UploadBundle\Exception\InformativeException;
 use Psr\Container\ContainerInterface;
@@ -183,7 +184,7 @@ class UploadedFileHelper implements UploadedFileHelperInterface, ServiceSubscrib
         } else {
             $mimeType = MimeTypes::getDefault()->guessMimeType($file->getPathname());
             $mimeGroup = explode('/', $mimeType)[0];
-            $icon = self::getIconByMimeType($mimeType);
+            $icon = MimeType::getIconByMimeType($mimeType);
             $webPath = $this->getWebPath($uploadRelativePath, $originName);
         }
 
@@ -242,7 +243,10 @@ class UploadedFileHelper implements UploadedFileHelperInterface, ServiceSubscrib
 
         $finder->in($absPath)->filter($filter);
         foreach ($finder as $file) {
-            $files[] = $this->getUploadedFileFromFileObj($file);
+            $files[] = $this->getUploadedFile(
+                ('' !== $uploadDirectory ? $uploadDirectory.'/' : '').$file->getFilename(),
+                $originName
+            );
         }
         $data = [
             'files' => $files,
@@ -270,30 +274,6 @@ class UploadedFileHelper implements UploadedFileHelperInterface, ServiceSubscrib
         return $fileInfos;
     }
 
-    public function getUploadedFileFromFileObj(\SplFileInfo $file): UploadedFile
-    {
-        $absolutePath = $file->getRealPath();
-        $hasOrigin = false;
-        $currentOrigin = null;
-        $originKey = null;
-        foreach ($this->origins as $key => $origin) {
-            if (0 === strpos($absolutePath, $origin['path'])) {
-                $hasOrigin = true;
-                $currentOrigin = $origin;
-                $originKey = $key;
-                break;
-            }
-        }
-        if (!$hasOrigin) {
-            throw new InformativeException('Chemin incorrect', 404);
-        }
-        // + 1 pour retirer le slash initial
-        return $this->getUploadedFile(
-            substr($absolutePath, strlen($currentOrigin['path']) + 1),
-            $originKey
-        );
-    }
-
     public static function getHost(): string
     {
         if (!isset($_SERVER['REQUEST_SCHEME'])) {
@@ -316,99 +296,5 @@ class UploadedFileHelper implements UploadedFileHelperInterface, ServiceSubscrib
     public static function hasGrantedAccess(UploadedFile $uploadedFile, $user): bool
     {
         return true;
-    }
-
-    public static function getHumanSize($size): string
-    {
-        if (!$size) {
-            return '';
-        }
-        $sz = ' KMGTP';
-        $factor = floor((strlen($size) - 1) / 3);
-        if (0 == $factor) {
-            return sprintf('%.0f octets', $size);
-        }
-
-        return sprintf('%.1f ', $size / pow(1024, $factor)).@$sz[$factor].'o';
-    }
-
-    public static function getIconByMimeType($mimeType): string
-    {
-        $mimeTypeExploded = explode('/', $mimeType);
-
-        switch ($mimeTypeExploded[0]) {
-            case 'image':
-                switch ($mimeTypeExploded[1]) {
-                    case 'jpeg':
-                        return 'image-jpg.svg';
-                    case 'png':
-                        return 'image-png.svg';
-                    case 'webp':
-                        return 'image-webp.svg';
-                    case 'svg+xml':
-                    case 'svg':
-                        return 'image-svg+xml.svg';
-                    case 'vnd.adobe.photoshop':
-                        return 'application-photoshop.svg';
-                    case 'x-xcf':
-                        return 'image-x-compressed-xcf.svg';
-                    default:
-                        return 'image.svg';
-                }
-                // no break
-            case 'video':
-                return 'video-x-generic.svg';
-            case 'audio':
-                return 'application-ogg.svg';
-                // erreur import font
-            case 'font':
-                return 'application-pgp-signature.svg';
-            case 'application':
-                switch ($mimeTypeExploded[1]) {
-                    case 'pdf':
-                        return 'application-pdf.svg';
-                    case 'illustrator':
-                        return 'application-illustrator.svg';
-                    case 'json':
-                        return 'application-json.svg';
-                    case 'vnd.oasis.opendocument.spreadsheet':
-                        return 'libreoffice-oasis-spreadsheet.svg';
-                    case 'vnd.oasis.opendocument.text':
-                        return 'libreoffice-oasis-master-document.svg';
-                    case 'vnd.openxmlformats-officedocument.wordprocessingml.document':
-                    case 'msword':
-                        return 'application-msword-template.svg';
-                    case 'vnd.openxmlformats-officedocument.spreadsheetml.sheet':
-                    case 'vnd.ms-excel':
-                        return 'application-vnd.ms-excel.svg';
-                    case 'zip':
-                        return 'application-x-archive.svg';
-                    default:
-                        return 'application-vnd.appimage.svg';
-                }
-                // no break
-            case 'text':
-                switch ($mimeTypeExploded[1]) {
-                    case 'x-php':
-                        return 'text-x-php.svg';
-                    case 'x-java':
-                        return 'text-x-javascript.svg';
-                    case 'css':
-                        return 'text-css.svg';
-                    case 'html':
-                        return 'text-html.svg';
-                    case 'xml':
-                        return 'text-xml.svg';
-
-                    default:
-                        return 'text.svg';
-                }
-
-                return 'text-x-script.png';
-                break;
-            default:
-                return 'unknown.svg';
-                break;
-        }
     }
 }

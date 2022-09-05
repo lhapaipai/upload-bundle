@@ -91,6 +91,10 @@ class UploadedFile
             return $this->filename;
         }
 
+        if ('' === $this->directory) {
+            return $this->filename;
+        }
+
         return $this->directory.DIRECTORY_SEPARATOR.$this->filename;
     }
 

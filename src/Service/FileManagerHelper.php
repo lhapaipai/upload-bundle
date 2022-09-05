@@ -11,7 +11,7 @@ class FileManagerHelper implements FileManagerHelperInterface
         $this->origins = $uploadOrigins;
     }
 
-    public function completeConfig($baseConfig = [], $locale = 'en'): array
+    public function completeConfig($baseConfig = []): array
     {
         $entryPoints = $baseConfig['entryPoints'];
 
@@ -22,9 +22,9 @@ class FileManagerHelper implements FileManagerHelperInterface
                 'directory' => '',
                 'origin' => $originName,
                 'readOnly' => false,
-                'icon' => 'fa-link-1',
+                'icon' => 'famfm-folder',
                 'label' => 'Répertoire principal',
-                'webPrefix' => isset($this->origins[$originName]['web_prefix']) ? $this->origins[$originName]['web_prefix'] : null
+                'webPrefix' => isset($this->origins[$originName]['web_prefix']) ? $this->origins[$originName]['web_prefix'] : null,
             ], $entryPoint);
         }
         $fileUpload = isset($baseConfig['fileUpload']) && is_array($baseConfig['fileUpload'])
@@ -33,28 +33,27 @@ class FileManagerHelper implements FileManagerHelperInterface
         $fileUpload = array_merge([
             'maxFileSize' => 10 * 1024 * 1024,
             'fileType' => [
-                "text/*",
-                "image/*", // image/vnd.adobe.photoshop  image/x-xcf
-                "video/*",
-                "audio/*"
-            ]
+                'text/*',
+                'image/*', // image/vnd.adobe.photoshop  image/x-xcf
+                'video/*',
+                'audio/*',
+            ],
         ], $fileUpload);
 
         unset($baseConfig['entryPoints']);
         unset($baseConfig['fileUpload']);
 
         return array_merge([
-            'endPoint' => "/media-manager",
+            'endPoint' => '/media-manager',
             'fileValidation' => null,
             'entryPoints' => $completeEntryPoints,
             'fileUpload' => $fileUpload,
-            'locale' => $locale,
             'injectCssVars' => true,
-            'themePrefix' => "penta",
+            'themePrefix' => 'penta',
             'form' => [
                 'filter' => 'small',
-                'type'   => 'image'
-            ]
+                'type' => 'image',
+            ],
         ], $baseConfig);
     }
 }
