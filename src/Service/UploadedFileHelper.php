@@ -260,18 +260,19 @@ class UploadedFileHelper implements UploadedFileHelperInterface, ServiceSubscrib
         return $data;
     }
 
-    public function hydrateFileWithAbsolutePath($fileInfos): array
+    public function hydrateFileWithAbsolutePath(UploadedFile $uploadedFile): string
     {
-        $fileInfos['absolutePath'] = $this->getAbsolutePath($fileInfos['uploadRelativePath'], $fileInfos['origin']);
+        $absolutePath = $this->getAbsolutePath($uploadedFile->getUploadRelativePath(), $uploadedFile->getOrigin());
+        $uploadedFile->setAbsolutePath($absolutePath);
 
-        return $fileInfos;
+        return $absolutePath;
     }
 
-    public function eraseSensibleInformations($fileInfos): array
+    public function eraseSensibleInformations(UploadedFile $uploadedFile): UploadedFile
     {
-        unset($fileInfos['absolutePath']);
+        $uploadedFile->setAbsolutePath(null);
 
-        return $fileInfos;
+        return $uploadedFile;
     }
 
     public static function getHost(): string

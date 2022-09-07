@@ -11,10 +11,8 @@ class FileManagerHelper implements FileManagerHelperInterface
         $this->origins = $uploadOrigins;
     }
 
-    public function completeConfig($baseConfig = []): array
+    public function completeEntryPoints($entryPoints = []): array
     {
-        $entryPoints = $baseConfig['entryPoints'];
-
         $completeEntryPoints = [];
         foreach ($entryPoints as $entryPoint) {
             $originName = isset($entryPoint['origin']) ? $entryPoint['origin'] : 'public';
@@ -27,6 +25,14 @@ class FileManagerHelper implements FileManagerHelperInterface
                 'webPrefix' => isset($this->origins[$originName]['web_prefix']) ? $this->origins[$originName]['web_prefix'] : null,
             ], $entryPoint);
         }
+
+        return $completeEntryPoints;
+    }
+
+    public function completeConfig($baseConfig = []): array
+    {
+        $completeEntryPoints = $this->completeEntryPoints($baseConfig['entryPoints']);
+
         $fileUpload = isset($baseConfig['fileUpload']) && is_array($baseConfig['fileUpload'])
             ? $baseConfig['fileUpload']
             : [];

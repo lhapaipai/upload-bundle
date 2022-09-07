@@ -6,11 +6,11 @@ use Pentatrion\UploadBundle\Entity\UploadedFile;
 
 interface UploadedFileHelperInterface
 {
-    public function getAbsolutePath(string $uploadRelativePath, string $origin): string;
+    public function getAbsolutePath(string $uploadRelativePath, string $origin = null): string;
 
-    public function getWebPath(string $uploadRelativePath, string $origin): string;
+    public function getWebPath(string $uploadRelativePath, string $origin = null): string;
 
-    public function getLiipPath(string $uploadRelativePath, string $origin): string;
+    public function getLiipPath(string $uploadRelativePath, string $origin = null): string;
 
     public function getLiipId(string $uploadRelativePath, string $originName = null): string;
 
@@ -26,9 +26,9 @@ interface UploadedFileHelperInterface
 
     public function addAbsolutePath(UploadedFile $uploadedFile): UploadedFile;
 
-    public function hydrateFileWithAbsolutePath(array $fileInfos);
+    public function hydrateFileWithAbsolutePath(UploadedFile $uploadedFile): string;
 
-    public function eraseSensibleInformations(array $fileInfos);
+    public function eraseSensibleInformations(UploadedFile $uploadedFile): UploadedFile;
 
     public static function hasGrantedAccess(UploadedFile $uploadedFile, $user);
 
