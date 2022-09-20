@@ -9,6 +9,7 @@ use Pentatrion\UploadBundle\Classes\MimeType;
 use Pentatrion\UploadBundle\Entity\UploadedFile;
 use Pentatrion\UploadBundle\Exception\InformativeException;
 use Psr\Container\ContainerInterface;
+use SplFileInfo;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Mime\MimeTypes;
@@ -75,6 +76,18 @@ class UploadedFileHelper implements UploadedFileHelperInterface, ServiceSubscrib
         }
 
         return $this->origins[$originName]['web_prefix'].'/'.$uploadRelativePath;
+    }
+
+    public function getLiipPathFromFile(SplFileInfo $file, $originName = null)
+    {
+        $originName = $originName ?? $this->defaultOriginName;
+
+        $uploadRelativePath = substr(
+            $file->getPathname(),
+            strlen($this->origins[$originName]['path']) + 1,
+        );
+
+        return $this->origins[$originName]['liip_path'].'/'.$uploadRelativePath;
     }
 
     public function getLiipPath($uploadRelativePath, $originName = null): string
@@ -231,7 +244,7 @@ class UploadedFileHelper implements UploadedFileHelperInterface, ServiceSubscrib
 
         $files = [];
 
-        $filter = function (\SplFileInfo $file) use ($mimeGroup) {
+        $filter = function (SplFileInfo $file) use ($mimeGroup) {
             if ($file->isDir() || is_null($mimeGroup)) {
                 return true;
             }

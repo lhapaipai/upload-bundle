@@ -3,6 +3,7 @@
 namespace Pentatrion\UploadBundle\Service;
 
 use Pentatrion\UploadBundle\Entity\UploadedFile;
+use SplFileInfo;
 
 interface UploadedFileHelperInterface
 {
@@ -13,6 +14,8 @@ interface UploadedFileHelperInterface
     public function getLiipPath(string $uploadRelativePath, string $origin = null): string;
 
     public function getLiipId(string $uploadRelativePath, string $originName = null): string;
+
+    public function getLiipPathFromFile(SplFileInfo $file, string $originName = null);
 
     public function parseLiipId($liipId): array;
 
