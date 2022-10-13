@@ -2,6 +2,7 @@
 
 namespace Pentatrion\UploadBundle\Controller;
 
+use Exception;
 use Pentatrion\UploadBundle\Classes\ExtendedZip;
 use Pentatrion\UploadBundle\Exception\InformativeException;
 use Pentatrion\UploadBundle\Service\FileHelper;
@@ -113,8 +114,12 @@ class UploadController extends AbstractController implements ServiceSubscriberIn
         $newCompletePath = $this->uploadedFileHelper->getAbsolutePath($newRelativePath, $infos['origin']);
 
         if (!$readOnly) {
-            $fs = new Filesystem();
-            $fs->rename($oldCompletePath, $newCompletePath);
+            try {
+                $fs = new Filesystem();
+                $fs->rename($oldCompletePath, $newCompletePath);
+            } catch (Exception $err) {
+                throw new InformativeException('Impossible de renommer le fichier : '.$infos['filename'].'. Vérifiez que le nom est bien unique.', 401);
+            }
         } else {
             throw new InformativeException('Impossible de renommer le fichier : '.$infos['filename'].' car vous n\'avez pas les droits nécessaires.', 401);
         }
@@ -189,8 +194,12 @@ class UploadController extends AbstractController implements ServiceSubscriberIn
             $infos['origin']
         );
 
-        $fs = new FileSystem();
-        $fs->mkdir($completePath);
+        try {
+            $fs = new FileSystem();
+            $fs->mkdir($completePath);
+        } catch (Exception $err) {
+            throw new InformativeException('Impossible de créer le dossier', 401);
+        }
 
         return $this->json([
             'directory' => $normalizer->normalize($this->uploadedFileHelper->getUploadedFile($infos['directory'].'/'.$filename, $infos['origin'])),
