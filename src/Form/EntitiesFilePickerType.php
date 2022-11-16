@@ -5,8 +5,8 @@ namespace Pentatrion\UploadBundle\Form;
 use Pentatrion\UploadBundle\Service\FileManagerHelperInterface;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
-use Symfony\Component\Form\FormView;
 use Symfony\Component\Form\FormInterface;
+use Symfony\Component\Form\FormView;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
@@ -50,7 +50,7 @@ class EntitiesFilePickerType extends AbstractType
         $resolver->setDefault('delete_empty', true);
     }
 
-    public function getParent()
+    public function getParent(): ?string
     {
         return CollectionType::class;
     }

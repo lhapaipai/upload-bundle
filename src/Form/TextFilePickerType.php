@@ -2,14 +2,13 @@
 
 namespace Pentatrion\UploadBundle\Form;
 
-use Pentatrion\UploadBundle\Service\UploadedFileHelperInterface;
 use Pentatrion\UploadBundle\Service\FileManagerHelperInterface;
+use Pentatrion\UploadBundle\Service\UploadedFileHelperInterface;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
-use Symfony\Component\Form\FormView;
 use Symfony\Component\Form\FormInterface;
+use Symfony\Component\Form\FormView;
 use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\Mime\MimeTypes;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
@@ -36,12 +35,12 @@ class TextFilePickerType extends AbstractType
     {
         $value = $form->getData();
 
-        $fileManagerConfig = ($this->fileManagerHelper->completeConfig($options['fileManagerConfig'], $this->locale)
-        );
+        $fileManagerConfig = $this->fileManagerHelper->completeConfig($options['fileManagerConfig'], $this->locale)
+        ;
 
         $uploadedFiles = [];
         if (!empty($value)) {
-            $values = explode(",", $value);
+            $values = explode(',', $value);
             foreach ($values as $fileRelativePath) {
                 $uploadedFiles[] = $this->uploadedFileHelper->getUploadedFile(
                     $fileRelativePath,
