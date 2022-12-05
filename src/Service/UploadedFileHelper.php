@@ -9,7 +9,6 @@ use Pentatrion\UploadBundle\Classes\MimeType;
 use Pentatrion\UploadBundle\Entity\UploadedFile;
 use Pentatrion\UploadBundle\Exception\InformativeException;
 use Psr\Container\ContainerInterface;
-use SplFileInfo;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Mime\MimeTypes;
@@ -54,8 +53,18 @@ class UploadedFileHelper implements UploadedFileHelperInterface, ServiceSubscrib
         return isset($this->origins[$originName]['web_prefix']);
     }
 
-    public function getAbsolutePath($uploadRelativePath = '', $originName = null): string
+    public function getAbsolutePath($mixed = '', $originName = null): string
     {
+        if ($mixed instanceof UploadedFile) {
+            $uploadRelativePath = $mixed->getUploadRelativePath();
+            $originName = $mixed->getOrigin();
+        } elseif (is_array($mixed)) {
+            $uploadRelativePath = $mixed['uploadRelativePath'];
+            $originName = $mixed['origin'];
+        } else {
+            $uploadRelativePath = $mixed;
+        }
+
         $originName = $originName ?? $this->defaultOriginName;
         $suffix = '' !== $uploadRelativePath ? '/'.$uploadRelativePath : '';
 
@@ -78,7 +87,7 @@ class UploadedFileHelper implements UploadedFileHelperInterface, ServiceSubscrib
         return $this->origins[$originName]['web_prefix'].'/'.$uploadRelativePath;
     }
 
-    public function getLiipPathFromFile(SplFileInfo $file, $originName = null)
+    public function getLiipPathFromFile(\SplFileInfo $file, $originName = null)
     {
         $originName = $originName ?? $this->defaultOriginName;
 
@@ -244,7 +253,7 @@ class UploadedFileHelper implements UploadedFileHelperInterface, ServiceSubscrib
 
         $files = [];
 
-        $filter = function (SplFileInfo $file) use ($mimeGroup) {
+        $filter = function (\SplFileInfo $file) use ($mimeGroup) {
             if ($file->isDir() || is_null($mimeGroup)) {
                 return true;
             }
