@@ -35,8 +35,7 @@ class TextFilePickerType extends AbstractType
     {
         $value = $form->getData();
 
-        $fileManagerConfig = $this->fileManagerHelper->completeConfig($options['fileManagerConfig'], $this->locale)
-        ;
+        $fileManagerConfig = $this->fileManagerHelper->completeConfig($options['fileManagerConfig'], $this->locale);
 
         $uploadedFiles = [];
         if (!empty($value)) {

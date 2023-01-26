@@ -36,8 +36,10 @@ class EntitiesFilePickerType extends AbstractType
 
         $view->vars['attr']['data-name'] = $view->vars['full_name'];
         $view->vars['attr']['data-minifilemanager'] = json_encode($fileManagerConfig);
-        $view->vars['attr']['data-uploaded-files'] = json_encode($this->normalizer->normalize($value));
         $view->vars['attr']['data-entity-form-file-picker'] = 'true';
+
+        /* @deprecated */
+        $view->vars['attr']['data-uploaded-files'] = json_encode($this->normalizer->normalize($value));
     }
 
     public function configureOptions(OptionsResolver $resolver): void

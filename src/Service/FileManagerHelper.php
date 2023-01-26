@@ -54,7 +54,6 @@ class FileManagerHelper implements FileManagerHelperInterface
             'fileValidation' => null,
             'entryPoints' => $completeEntryPoints,
             'fileUpload' => $fileUpload,
-            'injectCssVars' => true,
             'themePrefix' => 'penta',
             'form' => [
                 'filter' => 'small',
