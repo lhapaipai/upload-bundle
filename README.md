@@ -80,7 +80,7 @@ class PostType extends AbstractType
     {
         $builder
             // ...
-            ->add('file', FileType::class, [
+            ->add('image', FileType::class, [
                 'mapped' => false,
                 'required' => false
             ])
@@ -104,12 +104,13 @@ class PostController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $file = $form['file']->getData();
-            if ($file) {
-                $fileInfos = $fileHelper->uploadFile($file, 'posts');
+            $image = $form['image']->getData();
+            if ($image) {
+                /** @var UploadedFile $uploadedFile */
+                $uploadedFile = $fileHelper->uploadFile($image, 'posts');
 
                 //  posts/my-image.jpg
-                $post->setImage($fileInfos['uploadRelativePath']);
+                $post->setImagePath($fileInfos->getUploadRelativePath());
             }
 
             $this->getDoctrine()->getManager()->flush();
@@ -146,27 +147,22 @@ print_r($fileInfos);
 
 ```json
 {
-  "inode": 1575770,
-  "id": "@public_uploads:beach.jpg",
+  "id": null,
+  "liipId": "@public_uploads:beach.jpg",
+  "mimeGroup": "image",
+  "mimeType": "image/jpeg",
   "filename": "beach.jpg",
   "directory": "",
-  "uploadRelativePath": "beach.jpg",
-  "mimeType": "image/jpeg",
-  "mimeGroup": "image",
-  "type": "file",
-  "uploader": "John Doe",
   "origin": "public_uploads",
+  "imageWidth": 1200,
+  "imageHeight": 1200,
+  "type": "file",
   "size": 134558,
-  "humanSize": "131.4 Ko",
-  "createdAt": "2021-08-07T23:12:09+02:00",
-  "isDir": false,
-  "url": "http://mini-file-manager.local/uploads/beach.jpg",
-  "urlTimestamped": "http://mini-file-manager.local/uploads/beach.jpg?1628410071",
-  "icon": "/file-manager/icons/image-jpg.svg",
-  "details": { "type": "image", "width": 1200, "height": 1200, "ratio": 1 },
-  "thumbnails": {
-    "small": "http://mini-file-manager.local/media/cache/small/uploads/beach.jpg?1628410071"
-  }
+  "updatedAt": "2021-08-07T23:12:09+02:00",
+  "icon": "image-jpg.svg",
+  "public": false,
+  "absolutePath": null,
+  "uploadRelativePath": "beach.jpg"
 }
 ```
 
@@ -193,75 +189,26 @@ in your `page/show.html.twig` template
 
 ```twig
 <!-- folder/my-uploaded-file.pdf -->
-{{ page.file }}
+{{ page.imagePath }}
 
 <!-- /uploads/folder/my-uploaded-file.pdf -->
-{{ uploaded_file_web_path(page.file) }}
+{{ uploaded_file_web_path(page.imagePath) }}
 
 <!-- /media-manager/get/show/private_uploads/folder/my-uploaded-file.pdf -->
-{{ uploaded_file_web_path(page.file, "private_uploads") }}
+{{ uploaded_file_web_path(page.imagePath, "private_uploads") }}
 
 <!-- for your original -->
 <!-- <img src="/uploads/folder/logo.jpg"/> -->
-<img src="{{ uploaded_file_web_path(page.image) }}"/>
+<img src="{{ uploaded_file_web_path(page.imagePath) }}"/>
 
 <!-- for your cropped image (250x250px) -->
 <!-- <img src="http://localhost/media/cache/resolve/small/posts/logo.jpg"/> -->
-<img src="{{ uploaded_image_filtered(page.image, 'small') }}"/>
+<img src="{{ uploaded_image_filtered(page.imagePath, 'small') }}"/>
 
 <!-- <img src="http://localhost/media/cache/resolve/small/posts/logo.jpg"/> -->
-<img src="{{ uploaded_image_filtered(page.image, 'small', 'private_uploads') }}"/>
+<img src="{{ uploaded_image_filtered(page.imagePath, 'small', 'private_uploads') }}"/>
 ```
 
-## API Helper
-
-```php
-#[Route('/api', name: 'api_', defaults:["_format"=>"json"])]
-class ApiController extends AbstractController
-{
-
-    #[Route('/page/{id}', name: 'projects')]
-    public function showProjects(Page $page, UploadedFileHelper $fileInfosHelper): Response
-    {
-        // hydrate image field, with original/small/large webpaths.
-        $page = $fileInfosHelper->hydrateEntityWithUploadedFileData($page, ["image"], ["small", "large"]);
-
-        return new JsonResponse($projects);
-    }
-}
-```
-
-before hydration
-
-```json
-{
-  "id": 12,
-  "title": "My post",
-  "status": "published",
-  "content": "Content",
-  "image": "page/beach",
-  "createdAt": "2021-05-01T00:00:00+02:00",
-  "website": "..."
-}
-```
-
-after hydration
-
-```json
-{
-  "id": 12,
-  "title": "My post",
-  "status": "published",
-  "content": "Content",
-  "image": {
-    "original": "http://my-domain.com/uploads/page/beach.jpg",
-    "small": "http://my-domain.com/media/cache/small/uploads/page/beach.jpg",
-    "large": "http://my-domain.com/media/cache/large/uploads/page/beach.jpg"
-  },
-  "createdAt": "2021-05-01T00:00:00+02:00",
-  "website": "..."
-}
-```
 
 ## with Mini File Manager JS library.
 
@@ -283,23 +230,23 @@ npm i mini-file-manager
 <body>
   <div id="file-manager"></div>
 
-  <script>
+  <script type="module">
+    import { fileManager } from "mini-file-manager";
     let config = {
       "endPoint": "/media-manager",
-      "isAdmin": true,
-      "fileValidation": [],
       "entryPoints": [
         {
           "directory": "",
           "origin": "public_uploads",
           "readOnly": false,
           "icon": "fa-lock",
-          "label": "Uploads"
+          "label": "Uploads",
+          "webPrefix": "/uploads"
         }
       ]
     };
 
-    new miniFileManager.createFileManager("#file-manager", config);
+    fileManager("#file-manager", config);
   </script>
 </body>
 ```
@@ -312,10 +259,9 @@ use Pentatrion\UploadBundle\Service\FileManagerHelper;
 class ManagerController extends AbstractController
 {
     #[Route('/manager', name: 'manager')]
-    public function index(FileManagerHelper $fileManagerHelper): Response
+    public function index(FileManagerHelperInterface $fileManagerHelper): Response
     {
         $config = $fileManagerHelper->completeConfig([
-            'isAdmin' => true,
             'entryPoints' => [
                 [
                     'label' => 'Uploads',
@@ -324,7 +270,10 @@ class ManagerController extends AbstractController
                     'readOnly' => false,
                     'icon' => 'fa-lock'
                 ]
-            ]
+            ],
+            'fileUpload' => [
+                'maxFileSize' => 10 * 1024 * 1024,
+            ],
         ]);
         return $this->render('manager/index.html.twig', [
             'fileManagerConfig' => $config,
@@ -339,13 +288,13 @@ the mini-file-manager config is placed in data-props attribute.
 ```twig
 <head>
   <link rel="stylesheet" href="/dist/style.css" />
-  <script src="/dist/mini-file-manager.umd.js"></script>
 </head>
 <body>
-  <div id="file-manager" data-props="{{ fileManagerConfig | json_encode | e('html_attr') }}"></div>
+  <div id="file-manager" data-minifilemanager="{{ fileManagerConfig | json_encode | e('html_attr') }}"></div>
 
-  <script>
-    new miniFileManager.FileManager("#file-manager");
+  <script type="module">
+    import { fileManager } from "mini-file-manager";
+    fileManager("#file-manager");
   </script>
 </body>
 ```
@@ -359,18 +308,19 @@ Twig template for the file picker.
   <script src="/dist/mini-file-manager.umd.js"></script>
 </head>
 <body>
-  <button id="find-file" data-props="{{ fileManagerConfig | json_encode | e('html_attr') }}">Find</button>
+  <button id="find-file" data-minifilemanager="{{ fileManagerConfig | json_encode | e('html_attr') }}">Find</button>
 
-  <script>
-    let findBtn = document.getElementById("find-file");
-    findBtn.addEventListener("click", () => {
-      let options = JSON.parse(findBtn.dataset.props);
-      new miniFileManager.FileManagerModal(
-        options,
-        (files) => { console.log("onSuccess", files); },
-        () => { console.log("onAbort"); }
-      );
-    });
+  <script type="module">
+    import { fileManagerModal } from "mini-file-manager";
+    let pickerElt = document.querySelector("#file-picker");
+    let options = JSON.parse(pickerElt.dataset.minifilemanager);
+
+    pickerElt.addEventListener("click", () => {
+      fileManagerModal(options, (selectedFiles) => {
+        console.log(selectedFiles);
+      });
+      
+    })
   </script>
 </body>
 ```
@@ -382,42 +332,34 @@ If you want exemple, check [Mini File Manager Template](https://github.com/lhapa
 ## FilePickerType with mini-file-manager for your form
 
 ```php
-use Pentatrion\UploadBundle\Form\FilePickerType;
+use Pentatrion\UploadBundle\Form\TextFilePickerType;
 
 class AdminUserFormType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder
-            ->add('avatar', FilePickerType::class, [
-              'fileManagerConfig' => [
-                'entryPoints' => [
-                  [
-                    'label' => 'Uploads',
-                    'directory' => '',
-                    'origin' => 'public_uploads',
-                    'readOnly' => false,
-                    'icon' => 'fa-lock'
-                  ]
+            ->add('poster', TextFilePickerType::class, [
+                'required' => false,
+                'fileManagerConfig' => [
+                    'entryPoints' => [
+                        [
+                            'label' => 'Uploads',
+                            'directory' => 'form',
+                            'origin' => 'public_uploads',
+                        ],
+                    ],
+                    'fileUpload' => [
+                        'maxFileSize' => 512 * 1024 * 1024,
+                    ],
+                    'fileValidation' => [
+                        'imageOptions' => [
+                            'ratio' => 1,
+                        ],
+                    ],
+                    'multiple' => false
                 ],
-                'fileValidation' => null,
-                'fileUpload' => [
-                  'maxFileSize' => 10 * 1024 * 1024,
-                  'fileType' => [
-                    "text/*",
-                    "image/*", // image/vnd.adobe.photoshop  image/x-xcf
-                    "video/*",
-                    "audio/*"
-                  ]
-                ],
-                'locale' => 'fr',
-              ],
-              'formPreviewConfig' => [
-                'multiple'      => false,
-                'filter'        => 'small',
-                'type'          => 'image'
-              ]
-            )
+            ])
         ;
     }
 }
@@ -434,6 +376,7 @@ twig:
   form_themes: ["_form_theme.html.twig"]
 ```
 
+look at [_form_theme.html.twig](src/Resources/views/_form_theme.html.twig)
 ```twig
 {# templates/_form_theme.html.twig #}
 {%- block file_picker_widget -%}
@@ -447,8 +390,6 @@ twig:
 {%- endblock -%}
 ```
 
-import `assets/form-file-picker.js` from `pentatrion/upload-bundle` in your js.
-
 ## Advanced Bundle Configuration
 
 configure your upload directories
@@ -460,7 +401,7 @@ configure your upload directories
 pentatrion_upload:
   # Advanced config
   # must implement UploadedFileHelperInterface
-  file_infos_helper: 'App\Service\AppUploadedFileHelper'
+  uploaded_file_helper: 'App\Service\AppUploadedFileHelper'
 
   origins:
     # choose the name of your choice
