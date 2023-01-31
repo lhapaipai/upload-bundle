@@ -225,7 +225,6 @@ npm i mini-file-manager
 ```twig
 <head>
   <link rel="stylesheet" href="/dist/style.css" />
-  <script src="/dist/mini-file-manager.umd.js"></script>
 </head>
 <body>
   <div id="file-manager"></div>
@@ -305,7 +304,6 @@ Twig template for the file picker.
 
 <head>
   <link rel="stylesheet" href="/dist/style.css" />
-  <script src="/dist/mini-file-manager.umd.js"></script>
 </head>
 <body>
   <button id="find-file" data-minifilemanager="{{ fileManagerConfig | json_encode | e('html_attr') }}">Find</button>
@@ -476,7 +474,7 @@ add a config file for your bundle
 # config/packages/pentatrion_upload.yaml
 # default configuration
 pentatrion_upload:
-  file_infos_helper: 'Pentatrion\UploadBundle\Service\UploadedFileHelper'
+  uploaded_file_helper: 'Pentatrion\UploadBundle\Service\UploadedFileHelper'
   origins:
     public_uploads:
       path: "%kernel.project_dir%/public/uploads"
