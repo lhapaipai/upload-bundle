@@ -19,7 +19,7 @@ interface UploadedFileHelperInterface
 
     public function parseLiipId($liipId): array;
 
-    public function getUrlThumbnail(string $id, string $filter, bool $pregenerate = false, $withTimeStamp = true, array $runtimeConfig = []);
+    public function getUrlThumbnail(string $id, string $filter, array $runtimeConfig = [], $suffix = null);
 
     public function getUploadedFile($uploadRelativePath, $originName = null): ?UploadedFile;
 

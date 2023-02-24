@@ -2,6 +2,7 @@
 
 namespace Pentatrion\UploadBundle\Twig;
 
+use Pentatrion\UploadBundle\Entity\UploadedFile;
 use Pentatrion\UploadBundle\Service\UploadedFileHelperInterface;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
@@ -34,15 +35,26 @@ class AssetExtension extends AbstractExtension
         return $this->uploadedFileHelper->getWebPath($uploadRelativePath, $originName);
     }
 
-    public function getUploadedImageFiltered($uploadRelativePath, $filter, $originName = null): string
+    public function getUploadedImageFiltered(mixed $uploadedFile, $filter, $originName = null): string
     {
+        if (is_string($uploadedFile)) {
+            $uploadRelativePath = $uploadedFile;
+            $timestamp = true;
+        } else if ($uploadedFile instanceof UploadedFile) {
+            $uploadRelativePath = $uploadedFile->getUploadRelativePath();
+            $timestamp = $uploadedFile->getUpdatedAt()->format('c');
+        } else if (isset($uploadedFile['uploadRelativePath'])) {
+            $uploadRelativePath = $uploadedFile['uploadRelativePath'];
+            $timestamp = is_string($uploadedFile['updatedAt']) ? $uploadedFile['updatedAt'] : true;
+        }
+
         $liipId = $this->uploadedFileHelper->getLiipId($uploadRelativePath, $originName);
         $extension = substr($liipId, strrpos($liipId, '.') + 1);
         if ($extension === 'svg') {
             return $this->uploadedFileHelper->getWebPath($uploadRelativePath, $originName);
         } else {
             $liipPath = $this->uploadedFileHelper->getLiipPath($uploadRelativePath, $originName);
-            return $this->uploadedFileHelper->getUrlThumbnail($liipPath, $filter);
+            return $this->uploadedFileHelper->getUrlThumbnail($liipPath, $filter, [], $timestamp);
         }
     }
 }

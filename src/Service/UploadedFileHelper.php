@@ -26,7 +26,7 @@ class UploadedFileHelper implements UploadedFileHelperInterface, ServiceSubscrib
 
     // comme on veut un lien qui soit directement utilisable pour l'import
     // futur, c'est nécessaire de prégénérer le miniature
-    protected static $filtersToPregenerate = ['large', 'small'];
+    protected static $filtersToPregenerate = [];
 
     public static function getSubscribedServices(): array
     {
@@ -129,7 +129,7 @@ class UploadedFileHelper implements UploadedFileHelperInterface, ServiceSubscrib
      *
      * à partir d'un webPath retrouve l'url de son miniature
      */
-    public function getUrlThumbnail($liipPath, $filter, $pregenerate = false, $withTimeStamp = true, array $runtimeConfig = [])
+    public function getUrlThumbnail($liipPath, $filter, array $runtimeConfig = [], $suffix = null)
     {
         if (!$this->container->has('cache.manager')) {
             throw new \LogicException('You can not use the "getUrlThumbnail" method if the LiipImagineBundle is not available. Try running "composer require liip/imagine-bundle".');
@@ -140,8 +140,12 @@ class UploadedFileHelper implements UploadedFileHelperInterface, ServiceSubscrib
             return null;
         }
 
-        if ($withTimeStamp) {
-            $suffix = '?'.time();
+        if (!is_null($suffix)) {
+            if (is_string($suffix)) {
+                $suffix = '?'.$suffix;
+            } else {
+                $suffix = '?'.time();
+            }
         } else {
             $suffix = '';
         }
@@ -149,7 +153,7 @@ class UploadedFileHelper implements UploadedFileHelperInterface, ServiceSubscrib
         // on prégénère les images dont on a besoin de figer l'url (via editeur markdown)
         // sinon liipImagine nous donne une url de redirection qui n'est pas utilisable.
         // et donc on ne met pas de timestamp
-        if (in_array($filter, $this::$filtersToPregenerate) && $pregenerate) {
+        if (in_array($filter, $this::$filtersToPregenerate)) {
             $filterManager = $this->container->get('filter.manager');
             $dataManager = $this->container->get('data.manager');
 
