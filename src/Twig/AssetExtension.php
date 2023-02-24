@@ -53,8 +53,12 @@ class AssetExtension extends AbstractExtension
         if ($extension === 'svg') {
             return $this->uploadedFileHelper->getWebPath($uploadRelativePath, $originName);
         } else {
-            $liipPath = $this->uploadedFileHelper->getLiipPath($uploadRelativePath, $originName);
-            return $this->uploadedFileHelper->getUrlThumbnail($liipPath, $filter, [], $timestamp);
+            try {
+                $liipPath = $this->uploadedFileHelper->getLiipPath($uploadRelativePath, $originName);
+                return $this->uploadedFileHelper->getUrlThumbnail($liipPath, $filter, [], $timestamp);
+            } catch (\Exception $e) {
+                return $this->uploadedFileHelper->getWebPath($uploadRelativePath, $originName);
+            }
         }
     }
 }
